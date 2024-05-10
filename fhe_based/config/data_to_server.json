@@ -1,0 +1,12 @@
+{
+    "toCalOp": "2",
+    "filePaths": {
+        "basePath": ".\/demoData\/",
+        "toCalPathA": "variableA.fhe",
+        "toCalPathB": "variableB.fhe",
+        "calResPath": "variableRes.fhe",
+        "pubKeyPath": "publicKey.fhe",
+        "multKeyPath": "evalMultKey.fhe",
+        "contextPath": "cryptoContext.fhe"
+    }
+}

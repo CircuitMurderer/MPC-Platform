@@ -1,0 +1,17 @@
+{
+    "multDepth": 3,
+    "scaleModSize": 50,
+    "batchSize": 32,
+    "loadCtx": 1,
+    "filePaths": {
+        "basePath": "./demoData/",
+        "pubKeyPath": "publicKey.fhe",
+        "priKeyPath": "privateKey.fhe",
+        "varPathA": "variableA.fhe",
+        "varPathB": "variableB.fhe",
+        "varPathRes": "variableRes.fhe",
+        "multKeyPath": "evalMultKey.fhe",
+        "contextPath": "cryptoContext.fhe",
+        "otherPaths": []
+    }
+}
