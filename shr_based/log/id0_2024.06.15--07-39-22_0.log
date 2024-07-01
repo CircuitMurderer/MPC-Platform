@@ -1,0 +1,4 @@
+2024-06-15 07:39:25.196299: <info> Start preprocessing
+2024-06-15 07:39:25.638152: <info> Start evaluating the circuit gates sequentially (online after all finished setup)
+2024-06-15 07:39:25.687497: <info> Finished evaluating 20 gates
+2024-06-15 07:39:25.692973: <info> motion::Party has been deallocated
