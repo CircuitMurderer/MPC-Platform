@@ -2,6 +2,7 @@
 .fleet/
 .cache/
 build/
+log/
 
 CMakeLists.txt.user
 CMakeCache.txt
