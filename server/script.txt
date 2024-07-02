@@ -1,0 +1,2 @@
+curl -F "filename=data10k.csv" -F "file=@data10k.csv" http://localhost:8080/update 
+curl "http://localhost:8080/verify?operate=0&alicefile=data10k.csv&bobfile=data10k.csv"

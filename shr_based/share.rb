@@ -12,8 +12,8 @@ end
 g_args = {
   port: 8001,
   address: '127.0.0.1',
-  csvfile: 'data100k.csv',
-  sharefile: 'share.bin',
+  csvfile: 'data10k.csv',
+  sharefile: 'Share.bin',
   basepath: 'data/',
 }
 

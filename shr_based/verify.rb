@@ -11,9 +11,9 @@ end
 
 g_args = {
   port: 8001,
-  operate: 2,
+  operate: 3,
   address: '127.0.0.1',
-  sharefile: 'share.bin',
+  sharefile: 'Share.bin',
   resultfile: 'result.txt',
   basepath: 'data/',
 }
