@@ -7,7 +7,11 @@ import (
 
 func main() {
 	r := gin.Default()
+
 	r.GET("/verify", web.VerifyHandler)
 	r.POST("/update", web.UpdateHandler)
-	r.Run(":8080") // listen and serve on 0.0.0.0:8080
+	r.GET("/result", web.DownloadHandler)
+	r.GET("/delete", web.DeleteHandler)
+	
+	r.Run(":8080") 
 }

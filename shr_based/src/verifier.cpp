@@ -108,10 +108,8 @@ int main(int argc, char **argv) {
     auto duration = sci::time_from(start);
 
     auto dataSize = calRes.size();
-    std::cout << "Comm. per operations: " << 8 * (commEnd - commStart) / dataSize << " bits" << std::endl;
-    std::cout << "Number of FP ops/s:\t" << (double(dataSize) / duration) * 1e6 << std::endl;
-    std::cout << "Total Time:\t" << duration / (1000.0) << " ms" << std::endl;
-    std::cout << "Num_rounds: " << (iopack->get_rounds() - initRounds) << std::endl;
+    std::cout << "Communication Cost: " << commEnd - commStart << " bytes" << std::endl;
+    std::cout << "Total Time: " << duration / (1000.0) << " ms" << std::endl;
 
     // delete fpMath;
     delete fpOp;

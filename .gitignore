@@ -3,6 +3,7 @@
 .cache/
 build/
 log/
+data/
 
 CMakeLists.txt.user
 CMakeCache.txt

@@ -1,2 +1,14 @@
-curl -F "filename=data10k.csv" -F "file=@data10k.csv" http://localhost:8080/update 
-curl "http://localhost:8080/verify?operate=0&alicefile=data10k.csv&bobfile=data10k.csv"
+# 上传待验算的文件
+curl -F "id=1" -F "party=Alice" -F "file=@dataforAlice.csv" http://localhost:8080/update 
+curl -F "id=1" -F "party=Bob" -F "file=@dataforBob.csv" http://localhost:8080/update 
+curl -F "id=1" -F "party=Result" -F "file=@dataMulted.csv" http://localhost:8080/update 
+
+# 进行验算
+curl "http://localhost:8080/verify?id=1&operate=0"
+
+# 获取验算结果
+curl -o result_1.csv "http://localhost:8080/result?id=1"
+
+# 删除验算数据
+curl "http://localhost:8080/delete?id=1"
+
