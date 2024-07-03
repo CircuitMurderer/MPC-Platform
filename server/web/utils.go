@@ -180,11 +180,15 @@ func CompareResult(toCheckFileName, resultFileName, finalFileName string) (int, 
         if err != nil { return -1, err }
 
 		result := CompareSignificantDigits(dataValue, txtValues[i - 1], 6)
-		if !result { errorNumber += 1 }
+		if !result { 
+			err = writer.Write([]string { number, fmt.Sprintf("%g", txtValues[i - 1]) })
+			errorNumber += 1 
+		} else {
+			err = writer.Write([]string { number, fmt.Sprintf("%t", result) })
+		}
 		// mistake := math.Abs(dataValue - txtValues[i - 1])
 		// if mistake <= math.Abs(1e-6 * txtValues[i - 1]) { result = true }
 
-		err = writer.Write([]string { number, fmt.Sprintf("%t", result) })
 		if err != nil { return -1, err }
     }
 
