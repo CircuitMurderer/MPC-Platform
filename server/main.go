@@ -12,10 +12,10 @@ func main() {
 	if len(os.Args) > 1 { port = os.Args[1] }
 
 	r := gin.Default()
-	r.GET("/verify", web.VerifyHandler)
-	r.POST("/update", web.UpdateHandler)
-	r.GET("/result", web.DownloadHandler)
-	r.GET("/delete", web.DeleteHandler)
+	r.GET("/verify", web.Cors(), web.VerifyHandler)
+	r.POST("/update", web.Cors(), web.UpdateHandler)
+	r.GET("/result", web.Cors(), web.DownloadHandler)
+	r.GET("/delete", web.Cors(), web.DeleteHandler)
 	
 	r.Run(":" + port) 
 }
