@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,6 +18,7 @@ import (
 type VerifyParams struct {
 	ID			int		`form:"id"`
 	Port       	int    	`form:"port"`
+	Workers		int		`form:"workers"`
 	Operate    	int    	`form:"operate"`
 	Address    	string 	`form:"address"`
 }
@@ -47,96 +47,6 @@ func runCommand(cmd string, args ...string) (string, string, int) {
 
 	exitCode := command.ProcessState.ExitCode()
 	return string(outBytes), string(errBytes), exitCode
-}
-
-func DoShare(params VerifyParams) gin.H {
-	var output1, output2, error1, error2 string
-	var exitCode1, exitCode2 int
-
-	var wg sync.WaitGroup
-	wg.Add(2)
-
-	go func() {
-		defer wg.Done()
-		output1, error1, exitCode1 = runCommand(
-			"./sharer", 
-			fmt.Sprintf("%s=%s", "ro", "1"),
-			fmt.Sprintf("%s=%s", "ip", params.Address),
-			fmt.Sprintf("%s=%s", "pt", strconv.Itoa(params.Port)),
-			fmt.Sprintf("%s=%s", "csv", "AliceData.csv"),
-			fmt.Sprintf("%s=%s", "shr", "Share.bin"),
-			fmt.Sprintf("%s=%s", "pth", fmt.Sprintf("data/%s/", strconv.Itoa(params.ID))),
-		)
-	}()
-
-	go func() {
-		defer wg.Done()
-		output2, error2, exitCode2 = runCommand(
-			"./sharer", 
-			fmt.Sprintf("%s=%s", "ro", "2"),
-			fmt.Sprintf("%s=%s", "ip", params.Address),
-			fmt.Sprintf("%s=%s", "pt", strconv.Itoa(params.Port)),
-			fmt.Sprintf("%s=%s", "csv", "BobData.csv"),
-			fmt.Sprintf("%s=%s", "shr", "Share.bin"),
-			fmt.Sprintf("%s=%s", "pth", fmt.Sprintf("data/%s/", strconv.Itoa(params.ID))),
-		)
-	}()
-	
-	wg.Wait()
-	return gin.H {
-		"output_alice":   	ParseOutputToJson(output1),
-		"error_alice":    	error1,
-		"exitcode_alice": 	exitCode1,
-		"output_bob":   	ParseOutputToJson(output2),
-		"error_bob":    	error2,
-		"exitcode_bob": 	exitCode2,
-	}
-}
-
-func DoVerify(params VerifyParams) gin.H {
-	var output1, output2, error1, error2 string
-	var exitCode1, exitCode2 int
-
-	var wg sync.WaitGroup
-	wg.Add(2)
-
-	go func() {
-		defer wg.Done()
-		output1, error1, exitCode1 = runCommand(
-			"./verifier", 
-			fmt.Sprintf("%s=%s", "ro", "1"),
-			fmt.Sprintf("%s=%s", "ip", params.Address),
-			fmt.Sprintf("%s=%s", "pt", strconv.Itoa(params.Port)),
-			fmt.Sprintf("%s=%s", "op", strconv.Itoa(params.Operate)),
-			fmt.Sprintf("%s=%s", "shr", "Share.bin"),
-			fmt.Sprintf("%s=%s", "res", "CalResult.txt"),
-			fmt.Sprintf("%s=%s", "pth", fmt.Sprintf("data/%s/", strconv.Itoa(params.ID))),
-		)
-	}()
-
-	go func() {
-		defer wg.Done()
-		output2, error2, exitCode2 = runCommand(
-			"./verifier", 
-			fmt.Sprintf("%s=%s", "ro", "2"),
-			fmt.Sprintf("%s=%s", "ip", params.Address),
-			fmt.Sprintf("%s=%s", "pt", strconv.Itoa(params.Port)),
-			fmt.Sprintf("%s=%s", "op", strconv.Itoa(params.Operate)),
-			fmt.Sprintf("%s=%s", "shr", "Share.bin"),
-			fmt.Sprintf("%s=%s", "res", "CalResult.txt"),
-			fmt.Sprintf("%s=%s", "pth", fmt.Sprintf("data/%s/", strconv.Itoa(params.ID))),
-		)
-	}()
-	
-	wg.Wait()
-	return gin.H {
-		"output_alice":   	ParseOutputToJson(output1),
-		"error_alice":    	error1,
-		"exitcode_alice": 	exitCode1,
-		"output_bob":   	ParseOutputToJson(output2),
-		"error_bob":    	error2,
-		"exitcode_bob": 	exitCode2,
-	}
 }
 
 func CompareResult(toCheckFileName, resultFileName, finalFileName string) (int, error) {
@@ -268,20 +178,106 @@ func CompareSignificantDigits(value1, value2 float64, precision int) bool {
 	return math.Abs(sigDigits1 - sigDigits2) <= 1.
 }
 
-func ParseOutputToJson(output string) *gin.H {
+func ParseOutputToJson(output string) (*gin.H, int, float64) {
 	reComm := regexp.MustCompile(`Communication Cost:\s+(\d+)\s+bytes`)
 	reTime := regexp.MustCompile(`Total Time:\s+([\d.]+)\s+ms`)
 
 	commCostMatches := reComm.FindStringSubmatch(output)
-    if commCostMatches == nil { return nil }
+    if commCostMatches == nil { return nil, -1, -1. }
     commCost := commCostMatches[1]
 
 	timeMatches := reTime.FindStringSubmatch(output)
-    if timeMatches == nil { return nil }
+    if timeMatches == nil { return nil, -1, -1. }
     totalTime := timeMatches[1]
+
+    parsedComm, _ := strconv.Atoi(commCost)
+    parsedTime, _ := strconv.ParseFloat(totalTime, 64)
 
 	return &gin.H {
 		"comm_cost": commCost + " bytes",
 		"total_time": totalTime + " ms",
-	}
+	},
+    parsedComm,
+    parsedTime
+}
+
+func SplitCSV(filename, base string, parts int) error {
+    csvFile, err := os.Open(base + filename)
+    if err != nil { return err }
+    defer csvFile.Close()
+
+    reader := csv.NewReader(csvFile)
+    header, err := reader.Read()
+    if err != nil {
+        return err
+    }
+
+    var records [][]string
+    for {
+        record, err := reader.Read()
+        if err == io.EOF { break }
+        if err != nil { return err }
+        records = append(records, record)
+    }
+
+    totalLines := len(records)
+    linesPerPart := totalLines / parts
+    if totalLines % parts != 0 {
+        linesPerPart += 1
+    }
+
+    for i := 0; i < parts; i++ {
+        partFilename := fmt.Sprintf("%d%s", i, filename)
+        partFile, err := os.Create(base + partFilename)
+        if err != nil { return err }
+        defer partFile.Close()
+
+        writer := csv.NewWriter(partFile)
+        defer writer.Flush()
+
+		err = writer.Write(header)
+        if err != nil { return err }
+
+        start := i * linesPerPart
+        end := start + linesPerPart
+        if end > totalLines { end = totalLines }
+
+        for j := start; j < end; j++ {
+			err := writer.Write(records[j])
+            if err != nil { return err }
+        }
+    }
+
+    return nil
+}
+
+func MergeTxt(filename, base string, parts int) error {
+    outFile, err := os.Create(base + filename)
+    if err != nil { return err }
+    defer outFile.Close()
+
+    writer := bufio.NewWriter(outFile)
+    defer writer.Flush()
+
+    for i := 0; i < parts; i++ {
+        fName := fmt.Sprintf("%d%s", i, filename)
+        file, err := os.Open(base + fName)
+        if err != nil { return nil }
+        defer file.Close()
+
+        var numbers []string
+        scanner := bufio.NewScanner(file)
+        for scanner.Scan() {
+            numbers = append(numbers, scanner.Text())
+        }
+
+        if err := scanner.Err(); err != nil { return err }
+        for _, number := range numbers {
+            if _, err := writer.WriteString(number + "\n"); err != nil {
+                return fmt.Errorf("error writing to output file: %v", err)
+            }
+        }
+    }
+
+    return nil
 }
