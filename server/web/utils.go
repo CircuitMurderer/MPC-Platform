@@ -18,9 +18,11 @@ import (
 type VerifyParams struct {
 	ID			int		`form:"id"`
 	Port       	int    	`form:"port"`
+    Address    	string 	`form:"address"`
+
 	Workers		int		`form:"workers"`
 	Operate    	int    	`form:"operate"`
-	Address    	string 	`form:"address"`
+	Scale       int     `form:"scale"`
 }
 
 func runCommand(cmd string, args ...string) (string, string, int) {
@@ -49,7 +51,7 @@ func runCommand(cmd string, args ...string) (string, string, int) {
 	return string(outBytes), string(errBytes), exitCode
 }
 
-func CompareResult(toCheckFileName, resultFileName, finalFileName string) (int, error) {
+func CompareResult(toCheckFileName, resultFileName, finalFileName string, scale float64) (int, error) {
 	toCheckFile, err := os.Open(toCheckFileName)
 	if err != nil { return -1, err }
 	defer toCheckFile.Close()
@@ -89,7 +91,7 @@ func CompareResult(toCheckFileName, resultFileName, finalFileName string) (int, 
         dataValue, err := strconv.ParseFloat(record[1], 64)
         if err != nil { return -1, err }
 
-		result := CompareSignificantDigits(dataValue, txtValues[i - 1], 6)
+		result := CompareSignificantDigits(dataValue, txtValues[i - 1], 6, scale)
 		if !result { 
 			err = writer.Write([]string { number, fmt.Sprintf("%g", txtValues[i - 1]) })
 			errorNumber += 1 
@@ -172,10 +174,10 @@ func getMantissa(value float64, precision int) float64 {
 	return absValue / math.Pow(10, float64(exp - precision + 1))
 }
 
-func CompareSignificantDigits(value1, value2 float64, precision int) bool {
+func CompareSignificantDigits(value1, value2 float64, precision int, scale float64) bool {
 	sigDigits1 := getMantissa(value1, precision)
 	sigDigits2 := getMantissa(value2, precision)
-	return math.Abs(sigDigits1 - sigDigits2) <= 1.
+	return math.Abs(sigDigits1 - sigDigits2) <= scale
 }
 
 func ParseOutputToJson(output string) (*gin.H, int, float64) {

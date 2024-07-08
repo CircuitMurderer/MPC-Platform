@@ -5,6 +5,12 @@ build/
 log/
 data/
 
+*/server
+*/verifier
+*/sharer
+
+*/data*
+
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles

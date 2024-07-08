@@ -75,9 +75,11 @@ func VerifyHandler(c *gin.Context) {
 	params := VerifyParams {
 		ID: 0x01,
 		Port: 8001,
+		Address: "127.0.0.1",
+
+		Scale: 0,
 		Operate: 3,
 		Workers: 1,
-		Address: "127.0.0.1",
 	}
 	basePath := "data/" + strconv.Itoa(params.ID) + "/"
 
@@ -146,8 +148,12 @@ func VerifyHandler(c *gin.Context) {
 	errorNumber := -2
 	finalFilePath := basePath + "finalResult.csv"
 
+	scale := 1.
+	if params.Operate == 1 { scale = 10. }
+	if params.Scale >= 1 { scale = float64(params.Scale) }
+
 	if resultDataExist {
-		errorNumber, err = CompareResult(basePath + "ResultData.csv", basePath + "CalResult.txt", finalFilePath)
+		errorNumber, err = CompareResult(basePath + "ResultData.csv", basePath + "CalResult.txt", finalFilePath, scale)
 	} else {
 		err = TxtToCsv(basePath + "CalResult.txt", finalFilePath)
 	}
