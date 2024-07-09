@@ -63,12 +63,12 @@ curl "http://localhost:8080/delete?id=1"
         "exitcode_alice": 0,                // sharer exitcode
         "exitcode_bob": 0,
         "output_alice": {                   // sharer output
-            "comm_cost": "0 bytes",         // communication cost, in sharer, it's 0
-            "total_time": "10.771 ms"       // total run time
+            "comm_cost": 0,                 // communication cost(bytes), in sharer, it's 0
+            "total_time": 10.771            // total run time(ms)
         },
         "output_bob": {
-            "comm_cost": "0 bytes",
-            "total_time": "9.271 ms"
+            "comm_cost": 0,
+            "total_time": 9.271
         }
     },
     "verify_info": {                    
@@ -77,12 +77,12 @@ curl "http://localhost:8080/delete?id=1"
         "exitcode_alice": 0,                // verifier exitcode
         "exitcode_bob": 0,
         "output_alice": {                   // verifier output
-            "comm_cost": "31246668 bytes",  // communication cost
-            "total_time": "1434.41 ms"      // total run time
+            "comm_cost": 31246668,          // communication cost(bytes)
+            "total_time": 1434.41           // total run time(ms)
         },
         "output_bob": {
-            "comm_cost": "65677428 bytes",
-            "total_time": "1284.06 ms"
+            "comm_cost": 65677428,
+            "total_time": 1284.06
         }
     }
 }
