@@ -195,9 +195,14 @@ func ParseOutputToJson(output string) (*gin.H, int, float64) {
     parsedComm, _ := strconv.Atoi(commCost)
     parsedTime, _ := strconv.ParseFloat(totalTime, 64)
 
-	return &gin.H {
-		"comm_cost": commCost + " bytes",
-		"total_time": totalTime + " ms",
+	// return &gin.H {
+	// 	"comm_cost": commCost + " bytes",
+	// 	"total_time": totalTime + " ms",
+	// },
+    
+    return &gin.H {
+		"comm_cost": parsedComm,
+		"total_time": parsedTime,
 	},
     parsedComm,
     parsedTime
