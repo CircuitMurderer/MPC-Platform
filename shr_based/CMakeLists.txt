@@ -5,28 +5,25 @@ set(CMAKE_C_COMPILER "gcc-11")
 set(CMAKE_CXX_COMPILER "g++-11")
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-project(verifier)
+project(calculate_verifier)
 
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g -march=native -funroll-loops -malign-double -minline-all-stringops -flto -fuse-linker-plugin")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(SCI_DIR "/root/install/sci/lib/cmake/SCI")
 
-# link_directories(${PROJECT_SOURCE_DIR}/static)
-
-list(APPEND MOTION_Boost_COMPONENTS
+list(APPEND NEEDED_Boost_COMPONENTS
         system 
         filesystem)
 
 find_package(Boost REQUIRED
         COMPONENTS
-        ${MOTION_Boost_COMPONENTS})
+        ${NEEDED_Boost_COMPONENTS})
 
 set(Boost_USE_STATIC_LIBS ON)
 
 find_package(SCI CONFIG REQUIRED)
-include_directories("/root/install/sci/include")
 link_directories(${Boost_LIBRARY_DIRS})
 
+include_directories("/root/install/sci/include")
 # set_target_properties(${target} PROPERTIES LINKER_LANGUAGE CXX)
 
 add_executable(sharer src/sharer.cpp src/utils.hpp)
@@ -43,11 +40,6 @@ add_executable(verifier src/verifier.cpp src/utils.hpp)
 target_link_libraries(
 	verifier
         SCI::SCI-FloatingPoint
-        # PRIVATE cppzmq ${CMAKE_THREAD_LIBS_INIT}
-        # SCI::SCI-BuildingBlocks
-        # SCI::SCI-utils
-        # SCI::SCI-LinearOT
-        # SCI::SCI-NonLinear
         -static-libgcc
         -static-libstdc++
 )
