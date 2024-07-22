@@ -10,6 +10,6 @@ def generate_csv(filename, N):
             data = random.uniform(0, 1)
             writer.writerow([i, data])
 
-N = 10_000_000 
-generate_csv('data10M.csv', N)
+N = 100_000 
+generate_csv('data100k.csv', N)
 print(f"Generated {N}")
