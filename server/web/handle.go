@@ -85,12 +85,13 @@ func VerifyHandler(c *gin.Context) {
 		Operate: 3,
 		Workers: 1,
 	}
-	basePath := "data/" + strconv.Itoa(params.ID) + "/"
-
+	
 	if err := c.BindQuery(&params); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H { "error": err.Error() })
 		return
 	}
+
+	basePath := "data/" + strconv.Itoa(params.ID) + "/"
 
 	_, err := os.Stat(basePath + "AliceData.csv")
 	if err != nil && os.IsNotExist(err) { 
