@@ -4,13 +4,13 @@ import argparse
 import pandas as pd
 import requests
 import time
+import json
 
 from typing import List
 from tqdm import tqdm
 
 
-def wait(n):
-    time.sleep(n)
+OPERA_MAP = ['+', '-', '*', '/', "+'", "/'", '^']
 
 
 def check_equal_row_count(dfs: List[pd.DataFrame]):
@@ -45,7 +45,7 @@ def split_csv(df: pd.DataFrame, file: str, num_parts: int, output_dir: str):
 def post_file(url, file_path, party, file_id):
     files = { 'file': open(file_path, 'rb') }
     response = requests.post(url, data={'id': str(file_id), 'party': party}, files=files)
-    print(f"POST {party}: {response.text}")
+    return response.text
 
 
 def get_request(url, params):
@@ -53,11 +53,17 @@ def get_request(url, params):
     return response
 
 
+def check_exception(response: str):
+    resp_json = json.loads(response)
+    if 'error' in resp_json:
+        print(f"Error: {resp_json['error']}")
+        sys.exit(1)
+
+
 def process_files(part_files, file_id, result_dir, operate=2, base_url="http://localhost:9000", workers=8, scale=1):
-    post_file(base_url + "/update", part_files['A'], 'Alice', file_id)
-    post_file(base_url + "/update", part_files['B'], 'Bob', file_id)
-    post_file(base_url + "/update", part_files['R'], 'Result', file_id)
-    wait(1)
+    check_exception(post_file(base_url + "/update", part_files['A'], 'Alice', file_id))
+    check_exception(post_file(base_url + "/update", part_files['B'], 'Bob', file_id))
+    check_exception(post_file(base_url + "/update", part_files['R'], 'Result', file_id))
 
     response = get_request(
         base_url + "/verify", 
@@ -68,17 +74,41 @@ def process_files(part_files, file_id, result_dir, operate=2, base_url="http://l
             'scale': scale
         }
     )
-    print(f"Verify Response: {response.text}")
-    wait(1)
+    verify_response = json.loads(response.text)
+    checked_errors = verify_response['checked_errors']
+
+    share_info = verify_response['share_info']
+    if share_info['error_alice'] or share_info['error_bob']:
+        print('Something went wrong:', share_info['error_alice'], share_info['error_bob'])
+        sys.exit(-1)
+
+    verify_info = verify_response['verify_info']
+    if verify_info['error_alice'] or verify_info['error_bob']:
+        print('Something went wrong:', verify_info['error_alice'], verify_info['error_bob'])
+        sys.exit(-1)
+
+    real_comm = max(share_info['output_alice']['comm_cost'], share_info['output_bob']['comm_cost'])
+    real_comm += max(verify_info['output_alice']['comm_cost'], verify_info['output_bob']['comm_cost'])
+
+    real_time = max(share_info['output_alice']['total_time'], share_info['output_bob']['total_time'])
+    real_time += max(verify_info['output_alice']['total_time'], verify_info['output_bob']['total_time'])
 
     response = get_request(base_url + "/result", params={'id': str(file_id)})
-    result_file = f"result_{file_id}.csv"
-    with open(result_dir + result_file, 'wb') as f:
+    result_file = os.path.join(result_dir, f"result_{file_id}.csv")
+    with open(result_file, 'wb') as f:
         f.write(response.content)
-    print(f"Result saved as {result_file}")
 
     # response = get_request(base_url + "/delete", params={'id': str(file_id)})
-    # print(f"Delete Response: {response.text}")
+    # print(f"Delete Response: {response.text}")\
+
+    return result_file, checked_errors, real_comm, real_time
+
+
+def combine_results(result_files, combined_filename):
+    combined_df = pd.concat(
+        [pd.read_csv(f, dtype={'number': int, 'data': str}) for f in result_files])
+    combined_df.to_csv(combined_filename, index=False)
+    print(f"Combined results saved as {combined_filename}")
 
 
 def main():
@@ -91,6 +121,8 @@ def main():
     parser.add_argument('-w', '--workers', type=int, default=8, help="Verify workers")
     parser.add_argument('-s', '--scale', type=int, default=1, help="Precision control")
     parser.add_argument('-d', '--dir-out', type=str, default='./temp/', help="Output dir")
+    parser.add_argument('-f', '--result-file-dir', type=str, default='./results/', help="Results file dir")
+    parser.add_argument('-c', '--combined-file', type=str, default='combinedResult.csv', help="Combined result file name")
     args = parser.parse_args()
 
     files = {
@@ -116,18 +148,40 @@ def main():
         part_files = split_csv(dfs[label], file, args.split_n, args.dir_out)
         split_files[label] = part_files
 
-    for x in range(args.split_n):
+    result_file_names = []
+    difference, comm_cost, time_cost = 0, 0, 0.
+
+    print('Verifying calculations...')
+    for x in tqdm(range(args.split_n)):
         part_files = {
             'A': split_files['A'][x],
             'B': split_files['B'][x],
             'R': split_files['R'][x]
         }
-        process_files(part_files, file_id=x+1, result_dir='./results/', 
-                      operate=args.operator, workers=args.workers, scale=args.scale)
-        wait(1)
 
+        f_name, diff, c_cost, t_cost = process_files(
+            part_files, 
+            file_id=x+1, 
+            result_dir=args.result_file_dir, 
+            operate=args.operator, 
+            workers=args.workers, 
+            scale=args.scale
+        )
+
+        result_file_names.append(f_name)
+        difference += diff
+        comm_cost += c_cost
+        time_cost += t_cost
+        time.sleep(1)
+    
+    print('Summary:')
+    print(f'\tdata length - {row_count}')
+    print(f'\toperate between - {OPERA_MAP[args.operator]}')
+    print(f'\ttotal checked errors - {difference}')
+    print(f'\ttotal comm cost - {comm_cost} bits')
+    print(f'\ttotal time cost - {time_cost} ms')
+    combine_results(result_file_names, args.combined_file)
 
 
 if __name__ == "__main__":
     main()
-
