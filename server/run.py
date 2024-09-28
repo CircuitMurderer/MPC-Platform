@@ -11,6 +11,15 @@ from tqdm import tqdm
 
 
 OPERA_MAP = ['+', '-', '*', '/', "+'", "/'", '^']
+OPERA_DICT = {
+    'add': 0,
+    'sub': 1,
+    'mul': 2,
+    'div': 3,
+    'cadd': 4,
+    'cdiv': 5,
+    'exp': 6
+}
 
 
 def check_equal_row_count(dfs: List[pd.DataFrame]):
@@ -117,12 +126,13 @@ def main():
     parser.add_argument('-b', '--file-b', type=str, required=True, help="Bob's file path")
     parser.add_argument('-r', '--file-r', type=str, required=True, help="Result's file path")
     parser.add_argument('-n', '--split-n', type=int, required=True, help="Split number")
-    parser.add_argument('-o', '--operator', type=int, required=True, default=2, help="Operator: 0~6 -> +,-,*,/,+',/',^")
+    parser.add_argument('-o', '--operator', type=str, required=True, default="mul", help=f"Operator: {list(OPERA_DICT.keys())}")
     parser.add_argument('-w', '--workers', type=int, default=8, help="Verify workers")
     parser.add_argument('-s', '--scale', type=int, default=1, help="Precision control")
     parser.add_argument('-d', '--dir-out', type=str, default='./temp/', help="Output dir")
     parser.add_argument('-f', '--result-file-dir', type=str, default='./results/', help="Results file dir")
     parser.add_argument('-c', '--combined-file', type=str, default='combinedResult.csv', help="Combined result file name")
+    parser.add_argument('-u', '--uri', type=str, default='http://localhost:9000', help="Verifier URI")
     args = parser.parse_args()
 
     files = {
@@ -163,7 +173,7 @@ def main():
             part_files, 
             file_id=x+1, 
             result_dir=args.result_file_dir, 
-            operate=args.operator, 
+            operate=OPERA_DICT[args.operator.lower()], 
             workers=args.workers, 
             scale=args.scale
         )
@@ -176,7 +186,8 @@ def main():
     
     print('Summary:')
     print(f'\tdata length - {row_count}')
-    print(f'\toperate between - {OPERA_MAP[args.operator]}')
+    print(f'\toperate between - {args.operator}'
+        f'({OPERA_MAP[OPERA_DICT[args.operator]]})')
     print(f'\ttotal checked errors - {difference}')
     print(f'\ttotal comm cost - {comm_cost} bits')
     print(f'\ttotal time cost - {time_cost} ms')
@@ -185,3 +196,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
