@@ -1,0 +1,7 @@
+aiofiles==24.1.0
+fastapi==0.112.2
+pandas==2.2.2
+pydantic==2.8.2
+requests==2.32.3
+uvicorn==0.30.6 
+python-multipart==0.0.9

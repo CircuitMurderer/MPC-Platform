@@ -16,13 +16,12 @@ import (
 )
 
 type VerifyParams struct {
-	ID      int    `form:"id"`
-	Port    int    `form:"port"`
+	ID      string `form:"id"`
+	Port    string `form:"port"`
 	Address string `form:"address"`
-
-	Workers int `form:"workers"`
-	Operate int `form:"operate"`
-	Scale   int `form:"scale"`
+	Workers int    `form:"workers"`
+	Operate int    `form:"operate"`
+	Scale   int    `form:"scale"`
 }
 
 func runCommand(cmd string, args ...string) (string, string, int) {
