@@ -14,7 +14,7 @@ async def status_serv(id: str):
         return {
             "status": "success",
             "task_id": task_id,
-            "task_stat": "running",
+            "task_stat": task["status"],
             "task_info": task["info"],
             "task_stage": task["stage"]
         }
@@ -22,18 +22,20 @@ async def status_serv(id: str):
         return {
             "status": "success",
             "task_id": task_id,
-            "task_stat": "completed",
+            "task_stat": task["status"],
             "task_info": task["info"],
             "task_result": task["result"]
         }
     elif task["status"] == "failed":
         return {
-            "status": "failed",
+            "status": "success",
             "task_id": task_id,
+            "task_stat": task["status"],
             "error": task["error"]
         }
     else:
         return {
-            "status": "unknown",
+            "status": "success",
             "task_id": task_id,
+            "task_stat": "unknown",
         }

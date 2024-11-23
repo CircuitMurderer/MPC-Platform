@@ -39,7 +39,6 @@ app.add_middleware(
 )
 
 
-
 from web.services.update import update_serv
 from web.services.verify import verify_serv
 from web.services.result import result_serv
@@ -105,5 +104,4 @@ async def get_task_stat(id: str = Query(...)):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
     

@@ -18,4 +18,3 @@ def check_exception(response: str):
     resp_json = json.loads(response)
     if 'error' in resp_json:
         raise ValueError(f"Error: {resp_json['error']}")
-    

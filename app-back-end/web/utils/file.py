@@ -100,4 +100,3 @@ def check_equal_row_count(dfs: List[pd.DataFrame]):
     if len(set(row_counts)) > 1:
         raise ValueError("Error: CSV files have different number of rows.")
     return row_counts[0]
-
