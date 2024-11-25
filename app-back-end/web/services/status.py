@@ -1,10 +1,13 @@
+from typing import Dict, Any
 from fastapi import HTTPException
-from runner import tasks
+# from runner import tasks
 
 
-async def status_serv(id: str):
+async def status_serv(
+    id: str, 
+    tasks: Dict[str, Any]
+) -> Dict[str, Any]:
     task_id = id
-    global tasks
 
     if task_id not in tasks:
         raise HTTPException(status_code=404, detail=f"Task (ID = '{id}') not found, or created failed.")

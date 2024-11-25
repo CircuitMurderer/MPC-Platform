@@ -2,11 +2,11 @@ import os
 import json
 import hashlib
 import asyncio
-import aiofiles
 import pandas as pd
 
 from io import BytesIO
 from typing import List
+from multiprocessing import Pool
 from .http import check_exception, post_file, get_request
 
 
@@ -78,20 +78,36 @@ def combine_results(result_files: str, combined_filename: str):
     combined_df.to_csv(combined_filename, index=False)
 
 
+def save_part(pair):
+    part_df, part_file_name = pair
+    part_df.to_csv(part_file_name, index=False)
+    return part_file_name
+
+
 async def split_csv(df: pd.DataFrame, file_name: str, num_parts: int, output_dir: str):
     rows_per_part = len(df) // num_parts
     remainder = len(df) % num_parts
     base_name = os.path.splitext(file_name)[0]
 
-    part_filenames = []
+    part_dfs: List[pd.DataFrame] = []
+    part_filenames: List[str] = []
     for i in range(num_parts):
         start_idx = i * rows_per_part + min(i, remainder)
         end_idx = (i + 1) * rows_per_part + min(i + 1, remainder)
         part_df = df[start_idx:end_idx]
         part_file_name = os.path.join(output_dir, f"{base_name}-{i + 1}.csv")
-        part_df.to_csv(part_file_name, index=False)
+        # part_df.to_csv(part_file_name, index=False)
+        part_dfs.append(part_df)
         part_filenames.append(part_file_name)
-        await asyncio.sleep(0)
+        await asyncio.sleep(0.01)
+
+    for part_df, part_file_name in zip(part_dfs, part_filenames):
+        part_df.to_csv(part_file_name, index=False)
+        await asyncio.sleep(0.01)
+
+    # with Pool(processes=min(num_parts, os.cpu_count())) as pool:
+    #     _ = pool.map(save_part, list(zip(part_dfs, part_filenames)))
+
     return part_filenames
 
 

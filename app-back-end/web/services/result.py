@@ -1,9 +1,13 @@
+from pathlib import Path
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
-from runner import DEFAULT_DIR_OUT
+# from runner import DEFAULT_DIR_OUT
 
 
-async def result_serv(id: str):
+async def result_serv(
+    id: str, 
+    DEFAULT_DIR_OUT: Path
+) -> FileResponse:
     file_path = DEFAULT_DIR_OUT / id / "Verified.csv"
         
     if not file_path.exists():

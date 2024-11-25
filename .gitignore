@@ -12,6 +12,9 @@ data/
 */data*
 */base
 
+run-dir/*
+!run-dir/.gitkeep
+
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles

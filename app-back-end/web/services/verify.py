@@ -3,11 +3,12 @@ import time
 import asyncio
 import pandas as pd
 
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Dict, Any
 from fastapi import HTTPException
 
 from ..utils.file import split_csv, check_equal_row_count, process_files, combine_results
-from runner import tasks, OPERA_DICT, DEFAULT_DIR_OUT, DEFAULT_URI
+# from runner import tasks, OPERA_DICT, DEFAULT_DIR_OUT, DEFAULT_URI
 
 
 async def verify_serv(
@@ -17,11 +18,13 @@ async def verify_serv(
     split_n: int,
     workers: int,
     scale: int,
+    tasks: Dict[str, Any],
+    OPERA_DICT: Dict[str, int],
+    DEFAULT_DIR_OUT: Path,
+    DEFAULT_URI: str,
     is_async: bool = True,
 ):
     try:
-        global tasks
-
         if operator:
             if operator not in OPERA_DICT:
                 raise HTTPException(

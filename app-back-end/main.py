@@ -1,11 +1,18 @@
 import os
 import asyncio
+import uvicorn
 
 from pathlib import Path
 from typing import Optional, Dict
 
 from fastapi import FastAPI, HTTPException, UploadFile, Form, Query
 from fastapi.middleware.cors import CORSMiddleware
+
+from web.services.update import update_serv
+from web.services.verify import verify_serv
+from web.services.result import result_serv
+from web.services.delete import delete_serv
+from web.services.status import status_serv
 
 
 OPERA_MAP = ['+', '-', '*', '/', "+'", "/'", '^']
@@ -19,8 +26,8 @@ OPERA_DICT = {
     'exp': 6
 }
 
-DEFAULT_DIR_OUT = Path("./base/")
-DEFAULT_CAL_DIR = Path("./data/")
+DEFAULT_DIR_OUT = Path("../run-dir/seq_data/")
+DEFAULT_CAL_DIR = Path("../run-dir/par_data/")
 DEFAULT_COMBINED_FILE = "combinedResult.csv"
 DEFAULT_URI = "http://localhost:9000"
 
@@ -39,13 +46,6 @@ app.add_middleware(
 )
 
 
-from web.services.update import update_serv
-from web.services.verify import verify_serv
-from web.services.result import result_serv
-from web.services.delete import delete_serv
-from web.services.status import status_serv
-
-
 @app.post("/update")
 async def file_update(
     file: UploadFile,
@@ -53,11 +53,16 @@ async def file_update(
     party: str = Form(...),
 ):
     try:
-        return await update_serv(file, id, party)
-    
+        ret = await update_serv(file, id, party, DEFAULT_DIR_OUT)
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+    finally:
+        await file.close()
+    
+    return ret
+
 
 @app.get("/verify")
 async def run_process(
@@ -69,7 +74,23 @@ async def run_process(
     scale: int = 1,
 ):
     try:
-        asyncio.create_task(verify_serv(id, operator, operate, split_n, workers, scale, True))
+        global tasks
+        asyncio.create_task(
+            verify_serv(
+                id, 
+                operator, 
+                operate, 
+                split_n, 
+                workers, 
+                scale, 
+                tasks,
+                OPERA_DICT,
+                DEFAULT_DIR_OUT,
+                DEFAULT_URI,
+                True
+            )
+        )
+
         return {
             "status": "success",
             "message": f"Verify task (ID = '{id}') has been started."
@@ -77,31 +98,35 @@ async def run_process(
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 
 @app.get("/result")
 async def get_result(id: str = "test"):
     try:
-        return await result_serv(id)
+        return await result_serv(id, DEFAULT_DIR_OUT)
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 
 @app.get("/delete")
 async def delete_files(id: Optional[str] = Query(default=None)):
     try:
-        return await delete_serv(id)
+        return await delete_serv(id, DEFAULT_DIR_OUT, DEFAULT_CAL_DIR)
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 
 @app.get("/stat")
 async def get_task_stat(id: str = Query(...)):
     try:
-        return await status_serv(id)
+        global tasks
+        return await status_serv(id, tasks)
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
+if __name__ == '__main__':
+    uvicorn.run(app, host="0.0.0.0", port=8000)

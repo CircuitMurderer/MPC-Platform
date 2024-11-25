@@ -1,11 +1,16 @@
 import os
 import shutil
 
-from typing import Optional
-from runner import DEFAULT_DIR_OUT, DEFAULT_CAL_DIR
+from pathlib import Path
+from typing import Optional, Dict
+# from runner import DEFAULT_DIR_OUT, DEFAULT_CAL_DIR
 
 
-async def delete_serv(id: Optional[str]):
+async def delete_serv(
+    id: Optional[str], 
+    DEFAULT_DIR_OUT: Path, 
+    DEFAULT_CAL_DIR: Path
+) -> Dict[str, str]:
     if id is not None:
         origin_path = os.path.join(DEFAULT_DIR_OUT, id)
         if os.path.exists(origin_path):

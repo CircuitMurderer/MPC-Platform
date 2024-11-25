@@ -19,11 +19,11 @@ var (
 func init() {
 	flag.StringVar(&port, "port", "9000", "Port to run the server on (short: -p)")
 	flag.IntVar(&procs, "cpus", 16, "Number of processes to use (short: -c)")
-	flag.StringVar(&workDir, "dir", "data", "Data directory for the server (short: -d)")
+	flag.StringVar(&workDir, "dir", "par_data", "Data directory for the server (short: -d)")
 
 	flag.StringVar(&port, "p", "9000", "Short for --port")
 	flag.IntVar(&procs, "c", 16, "Short for --cpus")
-	flag.StringVar(&workDir, "d", "data", "Short for --dir")
+	flag.StringVar(&workDir, "d", "par_data", "Short for --dir")
 }
 
 func main() {
@@ -31,6 +31,7 @@ func main() {
 
 	runtime.GOMAXPROCS(procs)
 	fmt.Println("[Multi-procs]", runtime.GOMAXPROCS(0))
+	fmt.Println("[Work-directory]", workDir)
 
 	cmds.DataDir = workDir
 	services.DataDir = workDir
