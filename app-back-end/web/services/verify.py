@@ -56,7 +56,8 @@ async def verify_serv(
                 "info": {
                     "desc": "Checking data files.",
                     "sub_stage": ""
-                }
+                },
+                **tasks[id]
             }
 
         df_a = pd.read_csv(file_name_a)
@@ -144,16 +145,18 @@ async def verify_serv(
 
         verify_result = {
             "status": "success",
+            "data_length": tasks[id]["length"],
             "checked_errors": difference,
+            "error_rate": f"{round(float(difference) / tasks[id]['length'], 4) * 100}%",
             "comm_cost": comm_cost,
             "time_cost": time_cost,
-            "combined_file": base_path / "Verified.csv",
+            # "combined_file": base_path / "Verified.csv",
         }
 
         if is_async:
             tasks[id]["status"] = "completed"
             tasks[id]["stage"] = "done"
-            tasks[id]["result"] = verify_result
+            tasks[id]["checked"] = verify_result
             tasks[id]["info"] = {
                 "desc": "Verify all done.",
                 "sub_stage": ""

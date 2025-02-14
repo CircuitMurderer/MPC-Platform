@@ -101,7 +101,9 @@ const Compute: React.FC = () => {
             <div>
               <p>任务ID: {res.data.task_id}</p>
               <p>状态: {trans[status]}</p>
+              <p>数据规模: {res.data.task_result.data_length}</p>
               <p><strong>检出错误: </strong>{res.data.task_result.checked_errors}</p>
+              <p><strong>错误比例: </strong>{res.data.task_result.error_rate}</p>
               <p><strong>时间开销: </strong>{res.data.task_result.time_cost}</p>
               <p><strong>通信开销: </strong>{res.data.task_result.comm_cost}</p>
             </div>

@@ -2,7 +2,9 @@ import os
 import aiofiles
 
 from pathlib import Path
+from typing import Optional, Dict, Any
 from fastapi import HTTPException, UploadFile
+
 from ..utils.file import file_summary
 # from runner import DEFAULT_DIR_OUT
 
@@ -11,6 +13,7 @@ async def update_serv(
     file: UploadFile,
     id: str,
     party: str,
+    tasks: Dict[str, Any],
     DEFAULT_DIR_OUT: Path
 ):
     if not party in {'Alice', 'Bob', 'Result'}:
@@ -30,6 +33,9 @@ async def update_serv(
         await f.write(buffer)
 
     summary = await file_summary(file_cont=buffer)
+    if not id in tasks:
+        tasks[id] = {"length": summary["items"]}
+    tasks[id][party] = {"summary": summary}
 
     return {
         "status": "success",

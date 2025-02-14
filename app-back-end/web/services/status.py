@@ -27,7 +27,7 @@ async def status_serv(
             "task_id": task_id,
             "task_stat": task["status"],
             "task_info": task["info"],
-            "task_result": task["result"]
+            "task_result": task["checked"]
         }
     elif task["status"] == "failed":
         return {

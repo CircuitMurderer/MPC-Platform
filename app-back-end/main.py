@@ -5,6 +5,8 @@ import uvicorn
 from pathlib import Path
 from typing import Optional, Dict
 
+from pickledb import PickleDB
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, UploadFile, Form, Query
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -28,6 +30,7 @@ OPERA_DICT = {
 
 DEFAULT_DIR_OUT = Path("../run-dir/seq_data/")
 DEFAULT_CAL_DIR = Path("../run-dir/par_data/")
+DEFAULT_DB_DIR = Path("../run-dir/tasks.json")
 DEFAULT_COMBINED_FILE = "combinedResult.csv"
 DEFAULT_URI = "http://localhost:9000"
 
@@ -35,8 +38,26 @@ os.makedirs(DEFAULT_DIR_OUT, exist_ok=True)
 os.makedirs(DEFAULT_CAL_DIR, exist_ok=True)
 
 tasks: Dict[str, dict] = {}
-app = FastAPI()
+db = PickleDB(DEFAULT_DB_DIR)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global tasks
+
+    tasks = db.get('tasks')
+    if tasks is None:
+        tasks = {}
+    print(f"Loaded database: {DEFAULT_DB_DIR}")
+
+    yield
+
+    db.set('tasks', tasks)
+    db.save()
+    print(f"Saved database: {DEFAULT_DB_DIR}")
+
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
@@ -53,7 +74,7 @@ async def file_update(
     party: str = Form(...),
 ):
     try:
-        ret = await update_serv(file, id, party, DEFAULT_DIR_OUT)
+        ret = await update_serv(file, id, party, tasks, DEFAULT_DIR_OUT)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

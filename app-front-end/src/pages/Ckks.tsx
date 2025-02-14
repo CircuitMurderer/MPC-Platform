@@ -1,28 +1,38 @@
 import React, { useState } from "react";
 import { Button, Table, Drawer, Form, InputNumber, Select, Typography, message } from "antd";
 import axios from "axios";
+import { CKKS_BASIC_URI } from "../config";
 
 const { Title } = Typography;
 
+const BASIC_URI = CKKS_BASIC_URI;
 const Ckks: React.FC = () => {
   // 表格数据
   const [logs, setLogs] = useState([
     {
       key: "1",
-      time: "2024-11-27 12:00:00",
-      storage: "1.2MB",
-      result: "成功",
-      id: "12345",
-      operation: "加减运算",
+      time: "Anytime",
+      storage: "-",
+      result: "-",
+      id: "init-a",
+      operation: "加减运算 (-a)",
     },
     {
       key: "2",
-      time: "2024-11-27 13:00:00",
-      storage: "2.5MB",
-      result: "失败",
-      id: "67890",
-      operation: "乘除运算",
+      time: "Anytime",
+      storage: "-",
+      result: "-",
+      id: "init-m",
+      operation: "乘除运算 (-m)",
     },
+    {
+        key: "3",
+        time: "Anytime",
+        storage: "-",
+        result: "-",
+        id: "init-e",
+        operation: "指数运算 (-e)",
+      },
   ]);
   const [drawerVisible, setDrawerVisible] = useState(false);
 
@@ -63,10 +73,10 @@ const Ckks: React.FC = () => {
   // 生成随机数据集
   const handleGenerateDataset = async () => {
     try {
-      const res = await axios.post("http://127.0.0.1:9889/ckksv/generate", {
+      const res = await axios.post(`${BASIC_URI}/ckksv/generate`, {
         "dataset size": datasetSize,
       });
-      message.success(`生成数据集成功: ${res.data}`);
+      message.success(`生成数据集成功: ${res.data["message"]}`);
     } catch (error) {
       message.error("生成数据集失败");
     }
@@ -75,11 +85,11 @@ const Ckks: React.FC = () => {
   // 运算
   const handleCalculate = async () => {
     try {
-      const res = await axios.post("http://127.0.0.1:9889/ckksv/calcuate", {
+      const res = await axios.post(`${BASIC_URI}/ckksv/calcuate`, {
         "number of operations": operationCount,
         "operational form": operationForm,
       });
-      message.success(`运算成功: ${res.data}`);
+      message.success(`运算成功: ${res.data["message"]}`);
     } catch (error) {
       message.error("运算失败");
     }
@@ -88,11 +98,11 @@ const Ckks: React.FC = () => {
   // 验证
   const handleVerify = async () => {
     try {
-      const res = await axios.post("http://127.0.0.1:9889/ckksv/verify", {
+      const res = await axios.post(`${BASIC_URI}/ckksv/verify`, {
         "number of operations": operationCount,
         "operational form": operationForm,
       });
-      message.success(`验证成功: ${res.data}`);
+      message.success(`验证成功: ${res.data["message"]}`);
     } catch (error) {
       message.error("验证失败");
     }

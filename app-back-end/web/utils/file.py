@@ -22,10 +22,10 @@ async def file_summary(file_cont: bytes):
     return {
         "md5": file_md5,
         "items": len(df),
-        "mean": df["data"].mean(),
-        "std": df["data"].std(),
-        "max": df["data"].max(),
-        "min": df["data"].min()
+        "mean": float(df["data"].mean()),
+        "std": float(df["data"].std()),
+        "max": float(df["data"].max()),
+        "min": float(df["data"].min())
     }
 
 
