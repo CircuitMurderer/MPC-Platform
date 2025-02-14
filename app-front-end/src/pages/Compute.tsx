@@ -3,6 +3,7 @@ import { Upload, Button, InputNumber, Row, Col, Select, message, Table, Descript
 import { InboxOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { RcFile } from "antd/lib/upload";
+import { ABY_BASIC_URI } from "../config";
 
 interface SummaryData {
   key: string;
@@ -15,7 +16,7 @@ interface SummaryData {
   description: string;
 }
 
-const BASIC_URI = "http://localhost:8000";
+const BASIC_URI = ABY_BASIC_URI;
 const trans: {[key: string]: string} = {
   "running": "正在验证",
   "completed": "验证完成",
@@ -33,10 +34,10 @@ const Compute: React.FC = () => {
   const [summary, setSummary] = useState<SummaryData[]>(initialSummary);
   const [verifyParams, setVerifyParams] = useState({
     id: "test",
-    operate: 0,
+    operate: 2,
     scale: 1,
-    workers: 1,
-    split_n: 1,
+    workers: 8,
+    split_n: 0,
   });
 
   const handleUpload = async (party: string, file: RcFile): Promise<void> => {
@@ -169,9 +170,9 @@ const Compute: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="串行批次">
               <InputNumber
-                min={1}
+                min={0}
                 value={verifyParams.split_n}
-                onChange={(value) => setVerifyParams({ ...verifyParams, split_n: value || 1 })}
+                onChange={(value) => setVerifyParams({ ...verifyParams, split_n: value || 0 })}
                 style={{ width: "100%" }}
                 variant="borderless"
               />
@@ -180,7 +181,7 @@ const Compute: React.FC = () => {
               <InputNumber
                 min={1}
                 value={verifyParams.workers}
-                onChange={(value) => setVerifyParams({ ...verifyParams, workers: value || 1 })}
+                onChange={(value) => setVerifyParams({ ...verifyParams, workers: value || 8 })}
                 style={{ width: "100%" }}
                 variant="borderless"
               />

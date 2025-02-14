@@ -5,3 +5,5 @@ pydantic==2.8.2
 requests==2.32.3
 uvicorn==0.30.6 
 python-multipart==0.0.9
+tqdm==4.67.1
+pandas==2.2.3

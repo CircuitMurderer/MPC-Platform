@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
 import { Layout, Menu, Typography } from "antd";
 import Home from "./pages/Home";
 import Compute from "./pages/Compute";
+import Ckks from "./pages/Ckks";
 
 const { Header, Content, Footer, Sider } = Layout;
 const { Title } = Typography;
@@ -18,7 +19,8 @@ const App: React.FC = () => (
         </div>
         <Menu theme="dark" mode="inline" defaultSelectedKeys={["1"]}>
           <Menu.Item key="1"><Link to="/">首页</Link></Menu.Item>
-          <Menu.Item key="2"><Link to="/compute">计算页面</Link></Menu.Item>
+          <Menu.Item key="2"><Link to="/shr">秘密共享验证</Link></Menu.Item>
+          <Menu.Item key="3"><Link to="/fhe">同态加密验证</Link></Menu.Item>
         </Menu>
       </Sider>
       
@@ -29,7 +31,8 @@ const App: React.FC = () => (
         <Content style={{ margin: "16px", padding: "16px", background: "#fff" }}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/compute" element={<Compute />} />
+            <Route path="/shr" element={<Compute />} />
+            <Route path="/fhe" element={<Ckks />} />
           </Routes>
         </Content>
         <Footer style={{ textAlign: "center" }}>

@@ -8,6 +8,7 @@ import json
 
 from typing import List
 from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor
 
 
 OPERA_MAP = ['+', '-', '*', '/', "+'", "/'", '^']
@@ -30,23 +31,57 @@ def check_equal_row_count(dfs: List[pd.DataFrame]):
     return row_counts[0]
 
 
+# def split_csv(df: pd.DataFrame, file: str, num_parts: int, output_dir: str):
+#     rows_per_part = len(df) // num_parts
+#     remainder = len(df) % num_parts
+#     base_name = os.path.basename(file)
+#     name, ext = os.path.splitext(base_name)
+
+#     os.makedirs(output_dir, exist_ok=True)
+#     part_filenames = []
+#     print(f'Splitting files: {file}')
+#     for i in tqdm(range(num_parts)):
+#         start_idx = i * rows_per_part + min(i, remainder)
+#         end_idx = (i + 1) * rows_per_part + min(i + 1, remainder)
+#         part_df = df[start_idx:end_idx]
+        
+#         part_file_name = os.path.join(output_dir, f"{name}-{i + 1}{ext}")
+#         part_df.to_csv(part_file_name, index=False)
+#         part_filenames.append(part_file_name)
+#         # print(f"Saved: {part_file_name}")
+    
+#     return part_filenames
+
+
+def save_part_csv(part_df, part_file_name):
+    part_df.to_csv(part_file_name, index=False)
+
 def split_csv(df: pd.DataFrame, file: str, num_parts: int, output_dir: str):
     rows_per_part = len(df) // num_parts
     remainder = len(df) % num_parts
     base_name = os.path.basename(file)
     name, ext = os.path.splitext(base_name)
 
+    os.makedirs(output_dir, exist_ok=True)
     part_filenames = []
     print(f'Splitting files: {file}')
-    for i in tqdm(range(num_parts)):
-        start_idx = i * rows_per_part + min(i, remainder)
-        end_idx = (i + 1) * rows_per_part + min(i + 1, remainder)
-        part_df = df[start_idx:end_idx]
+
+    part_ranges = [
+        (i * rows_per_part + min(i, remainder), (i + 1) * rows_per_part + min(i + 1, remainder))
+        for i in range(num_parts)
+    ]
+
+    with ThreadPoolExecutor() as executor:
+        futures = []
+        for i, (start_idx, end_idx) in enumerate(part_ranges):
+            part_df = df.iloc[start_idx:end_idx] 
+            part_file_name = os.path.join(output_dir, f"{name}-{i + 1}{ext}")
+            part_filenames.append(part_file_name)
+
+            futures.append(executor.submit(save_part_csv, part_df, part_file_name))
         
-        part_file_name = os.path.join(output_dir, f"{name}-{i + 1}{ext}")
-        part_df.to_csv(part_file_name, index=False)
-        part_filenames.append(part_file_name)
-        # print(f"Saved: {part_file_name}")
+        for future in tqdm(futures, desc="Saving parts"):
+            future.result() 
     
     return part_filenames
 
@@ -102,6 +137,7 @@ def process_files(part_files, file_id, result_dir, operate=2, base_url="http://l
     real_time = max(share_info['output_alice']['total_time'], share_info['output_bob']['total_time'])
     real_time += max(verify_info['output_alice']['total_time'], verify_info['output_bob']['total_time'])
 
+    os.makedirs(result_dir, exist_ok=True)
     response = get_request(base_url + "/result", params={'id': str(file_id)})
     result_file = os.path.join(result_dir, f"result_{file_id}.csv")
     with open(result_file, 'wb') as f:
@@ -182,13 +218,15 @@ def main():
         difference += diff
         comm_cost += c_cost
         time_cost += t_cost
-        time.sleep(1)
+        time.sleep(0.1)
     
     print('Summary:')
     print(f'\tdata length - {row_count}')
     print(f'\toperate between - {args.operator}'
-        f'({OPERA_MAP[OPERA_DICT[args.operator]]})')
+          f'({OPERA_MAP[OPERA_DICT[args.operator]]})')
     print(f'\ttotal checked errors - {difference}')
+    print(f'\terror rate of the result - '
+          f'{round(float(difference) / row_count * 100, 4)}%')
     print(f'\ttotal comm cost - {comm_cost} bits')
     print(f'\ttotal time cost - {time_cost} ms')
     combine_results(result_file_names, args.combined_file)
