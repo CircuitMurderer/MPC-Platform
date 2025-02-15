@@ -18,8 +18,8 @@ const App: React.FC = () => (
     <Layout style={{ minHeight: "100vh" }}>
       <Sider breakpoint="lg" collapsedWidth="80">
         <div style={{ padding: "16px", textAlign: "center" }}>
-          <Title level={4} style={{ color: "white", margin: 0 }}>
-            MPC Verifier
+          <Title level={5} style={{ color: "white", margin: 0 }}>
+            🧮&nbsp;计算验证模块
           </Title>
         </div>
         <Menu theme="dark" mode="inline" defaultSelectedKeys={["1"]}>
@@ -42,7 +42,7 @@ const App: React.FC = () => (
           </Routes>
         </Content>
         <Footer style={{ textAlign: "center" }}>
-          MPC Verifier ©2024
+        高置信的密文数据完整性验证工具集 © 2024
         </Footer>
       </Layout>
     </Layout>

@@ -215,9 +215,9 @@ const Compute: React.FC = () => {
               />
             </Descriptions.Item>
             <Descriptions.Item label="操作">
-              <Button type="primary" onClick={handleVerify}>验证</Button>
-              <Button style={{ marginLeft: 16 }} onClick={handleDownload}>结果</Button>
-              <Button style={{ marginLeft: 16 }} onClick={handleStatus}>状态</Button>
+              <Button type="link" onClick={handleVerify}>验证</Button>
+              <Button type="text" style={{ marginLeft: 16 }} onClick={handleDownload}>结果</Button>
+              <Button type="text" style={{ marginLeft: 16 }} onClick={handleStatus}>状态</Button>
             </Descriptions.Item>
           </Descriptions>
         </Col>

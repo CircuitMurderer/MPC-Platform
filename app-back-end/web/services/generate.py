@@ -9,7 +9,7 @@ from ..utils.file import file_summary
 # from runner import DEFAULT_DIR_OUT
 
 
-async def update_serv(
+async def gen_serv(
     file: UploadFile,
     id: str,
     party: str,
