@@ -31,6 +31,7 @@ OPERA_DICT = {
 DEFAULT_DIR_OUT = Path("../run-dir/seq_data/")
 DEFAULT_CAL_DIR = Path("../run-dir/par_data/")
 DEFAULT_DB_DIR = Path("../run-dir/tasks.json")
+DEFAULT_SCRIPT_DIR = Path("../scripts")
 DEFAULT_COMBINED_FILE = "combinedResult.csv"
 DEFAULT_URI = "http://localhost:9000"
 

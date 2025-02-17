@@ -28,9 +28,9 @@ const Ckks: React.FC = () => {
       const res = await axios.post(`${BASIC_URI}/ckksv/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setLogs(prevLogs => [...prevLogs, `文件上传成功: ${file.name}`]);
+      setLogs(prevLogs => [...prevLogs, `文件上传完毕: ${file.name}`]);
     } catch (error) {
-      setLogs(prevLogs => [...prevLogs, `文件上传失败: ${file.name}`]);
+      setLogs(prevLogs => [...prevLogs, `文件上传错误: ${file.name}`]);
     }
 
     return false; // 防止自动上传
@@ -47,9 +47,9 @@ const Ckks: React.FC = () => {
       const res = await axios.post(`${BASIC_URI}/ckksv/generate`, {
         "dataset size": datasetSize,
       });
-      setLogs(prevLogs => [...prevLogs, `生成数据集成功: \n${res.data["message"]}`]);
+      setLogs(prevLogs => [...prevLogs, `生成数据集完毕: \n${res.data["message"]}`]);
     } catch (error) {
-      setLogs(prevLogs => [...prevLogs, "生成数据集失败"]);
+      setLogs(prevLogs => [...prevLogs, "生成数据集错误"]);
     }
   };
 
@@ -60,9 +60,9 @@ const Ckks: React.FC = () => {
         "number of operations": operationCount,
         "operational form": operationForm,
       });
-      setLogs(prevLogs => [...prevLogs, `运算成功: \n${res.data["message"]}`]);
+      setLogs(prevLogs => [...prevLogs, `运算完毕: \n${res.data["message"]}`]);
     } catch (error) {
-      setLogs(prevLogs => [...prevLogs, `运算失败: \n${error}`]);
+      setLogs(prevLogs => [...prevLogs, `运算错误: \n${error}`]);
     }
   };
 
@@ -73,9 +73,9 @@ const Ckks: React.FC = () => {
         "number of operations": operationCount,
         "operational form": operationForm,
       });
-      setLogs(prevLogs => [...prevLogs, `验证成功: \n${res.data["message"]}`]);
+      setLogs(prevLogs => [...prevLogs, `验证完毕: \n${res.data["message"]}`]);
     } catch (error) {
-      setLogs(prevLogs => [...prevLogs, "验证失败"]);
+      setLogs(prevLogs => [...prevLogs, "验证错误"]);
     }
   };
 
@@ -93,9 +93,9 @@ const Ckks: React.FC = () => {
       link.setAttribute("download", `data${datasetSize}.csv`);
       document.body.appendChild(link);
       link.click();
-      setLogs(prevLogs => [...prevLogs, "数据下载成功"]);
+      setLogs(prevLogs => [...prevLogs, "数据下载完毕"]);
     } catch (error) {
-      setLogs(prevLogs => [...prevLogs, "数据下载失败"]);
+      setLogs(prevLogs => [...prevLogs, "数据下载错误"]);
     }
   };
 
@@ -112,9 +112,22 @@ const Ckks: React.FC = () => {
       link.setAttribute("download", "logs.txt");
       document.body.appendChild(link);
       link.click();
-      setLogs(prevLogs => [...prevLogs, "结果下载成功"]);
+      setLogs(prevLogs => [...prevLogs, "结果下载完毕"]);
     } catch (error) {
-      setLogs(prevLogs => [...prevLogs, "结果下载失败"]);
+      setLogs(prevLogs => [...prevLogs, "结果下载错误"]);
+    }
+  };
+
+  // 增加新的按钮来触发 destroy API
+  const handleDestroy = async () => {
+    try {
+      const res = await axios.post(`${BASIC_URI}/ckksv/destroy`, {
+        "number of operations": operationCount,
+        "operational form": operationForm,
+      });
+      setLogs(prevLogs => [...prevLogs, `数据篡改完毕: \n${res.data["message"]}`]);
+    } catch (error) {
+      setLogs(prevLogs => [...prevLogs, "数据篡改错误"]);
     }
   };
 
@@ -207,21 +220,26 @@ const Ckks: React.FC = () => {
             </Row>
 
             <Row gutter={16}>
-              <Col span={8}>
+              <Col span={6}>
                 <Button type="dashed" block onClick={handleGenerateDataset}>
                   生成数据集
                 </Button>
               </Col>
 
-              <Col span={8}>
+              <Col span={6}>
                 <Button type="default" block onClick={handleCalculate}>
                   开始运算
                 </Button>
               </Col>
 
-              <Col span={8}>
-                <Button type="primary" block onClick={handleVerify}>
+              <Col span={6}>
+                <Button style={{ backgroundColor: 'darkblue', color: 'white' }} block onClick={handleVerify}>
                   开始验证
+                </Button>
+              </Col>
+              <Col span={6}>
+                <Button style={{ backgroundColor: 'purple', color: 'white' }} block onClick={handleDestroy}>
+                  数据篡改
                 </Button>
               </Col>
             </Row>

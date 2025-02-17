@@ -42,7 +42,7 @@ const App: React.FC = () => (
           </Routes>
         </Content>
         <Footer style={{ textAlign: "center" }}>
-        高置信的密文数据完整性验证工具集 © 2024
+          高置信的密文数据完整性验证工具集 © 2024
         </Footer>
       </Layout>
     </Layout>
