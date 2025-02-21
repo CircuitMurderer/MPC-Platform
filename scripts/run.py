@@ -151,8 +151,10 @@ def combine_results(result_files, sample_indexes, combined_filename):
     combined_df = pd.concat(
         [pd.read_csv(f, dtype={'number': int, 'data': str}) for f in result_files])
     combined_df['number'] = sample_indexes
-    combined_df = combined_df.sort_values(by='data', key=lambda x: x.map(lambda y: isinstance(y, float)), ascending=False)
+    combined_df['data_numeric'] = pd.to_numeric(combined_df['data'], errors='coerce')
+    combined_df = combined_df.sort_values(by='data_numeric', ascending=True, na_position='last')
     
+    combined_df = combined_df.drop(columns='data_numeric')
     combined_df.to_csv(combined_filename, index=False)
     print(f"combined results saved as {combined_filename}")
 
@@ -187,6 +189,9 @@ def main():
         'B': pd.read_hdf(files['B'], key='data'),
         'R': pd.read_hdf(files['R'], key='data')
     }
+
+    if args.operator.lower() == 'sub':
+        args.scale *= 100
 
     row_count = check_equal_row_count(origin_dfs.values())
     if args.split_n < 0 or args.split_n > row_count:

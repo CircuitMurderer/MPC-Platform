@@ -1,6 +1,9 @@
 import React, { useState } from "react";
-import { Upload, Button, InputNumber, Row, Col, Select, message, Table, Descriptions, Input, Slider, Modal } from "antd";
-import { InboxOutlined } from "@ant-design/icons";
+import { 
+  Upload, Button, InputNumber, Row, Col, Select, message, Table,
+  Descriptions, Input, Slider, Modal, Skeleton, FloatButton
+} from "antd";
+import { InboxOutlined, InfoCircleOutlined, CheckCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { RcFile } from "antd/lib/upload";
 import { ABY_BASIC_URI } from "../config";
@@ -15,6 +18,31 @@ interface SummaryData {
   min: number;
   description: string;
 }
+
+interface TaskResult {
+  data_length: number;
+  operate_between: number;
+  checked_mistakes: number;
+  mistake_rate: string;
+  conf_level: string;
+  error_rate: string;
+  time_cost: string;
+  comm_cost: string;
+}
+
+interface TaskInfo {
+  desc: string;
+  sub_stage: string;
+}
+
+interface TaskStatus {
+  task_id: string;
+  task_stat: string;
+  task_info: TaskInfo;
+  task_result?: TaskResult;
+}
+
+const operate_to_text = ['ADD', 'SUB', 'MUL', 'DIV', 'Cheap ADD', 'Cheap DIV', 'EXP'];
 
 const BASIC_URI = ABY_BASIC_URI;
 const trans: {[key: string]: string} = {
@@ -31,6 +59,16 @@ const initialSummary: SummaryData[] = [
 ];
 
 const Compute: React.FC = () => {
+  const [loading, setLoading] = useState(false); 
+  const [visible, setVisible] = useState(false);
+  const [statusData, setStatusData] = useState<TaskStatus | undefined>(undefined);
+  
+  const [addVisible, setAddVisible] = useState(false);
+  const [genParams, setGenParams] = useState({
+    operator: "mul",
+    data_length: 1000000,
+  })
+
   const [summary, setSummary] = useState<SummaryData[]>(initialSummary);
   const [verifyParams, setVerifyParams] = useState({
     id: "test",
@@ -68,7 +106,7 @@ const Compute: React.FC = () => {
   const handleVerify = async (): Promise<void> => {
     try {
       const res = await axios.get(`${BASIC_URI}/verify`, { params: verifyParams });
-      message.success(res.data.message);
+      message.success(`验算任务(ID = '${res.data.task_id}')已启动`);
     } catch (error) {
       message.error("验证任务启动失败");
     }
@@ -90,42 +128,29 @@ const Compute: React.FC = () => {
   };
 
   const handleStatus = async (): Promise<void> => {
+    setLoading(true); 
     try {
       const res = await axios.get(`${BASIC_URI}/stat`, { params: { id: verifyParams.id } });
-      const status: string = res.data.task_stat;
-      const info = `${res.data.task_info.desc} ${res.data.task_info.sub_stage}`
-      if (status === "completed") {
-        Modal.success({
-          title: "任务状态",
-          content: (
-            <div>
-              <p>任务ID: {res.data.task_id}</p>
-              <p>状态: {trans[status]}</p>
-              <p>数据规模: {res.data.task_result.data_length}</p>
-              <p><strong>检出错误: </strong>{res.data.task_result.checked_errors}</p>
-              <p><strong>错误比例: </strong>{res.data.task_result.error_rate}</p>
-              <p><strong>时间开销: </strong>{res.data.task_result.time_cost}</p>
-              <p><strong>通信开销: </strong>{res.data.task_result.comm_cost}</p>
-            </div>
-          ),
-        })
-      }
-      else {
-        Modal.info({
-          title: "任务状态",
-          content: (
-            <div>
-              <p>任务ID: {res.data.task_id}</p>
-              <p>状态: {trans[status]}</p>
-              <p>阶段: {info}</p>
-            </div>
-          ),
-        });
-      }
+      // const status: string = res.data.task_stat;
+      // const info = `${res.data.task_info.desc} ${res.data.task_info.sub_stage}`;
+      setStatusData(res.data); 
+      console.log(res.data);
     } catch (error) {
-      message.error("获取任务状态失败");
+      message.error("任务未运行");
+    } finally {
+      setLoading(false); 
     }
   };
+
+  const handleModalOpen = () => {
+    setVisible(true);
+    handleStatus();
+  };
+
+  const handleModalClose = () => {
+    setVisible(false);
+    setStatusData(undefined);
+  }; 
 
   const columns = [
     { title: "文件描述", dataIndex: "description", key: "description" },
@@ -217,11 +242,54 @@ const Compute: React.FC = () => {
             <Descriptions.Item label="操作">
               <Button type="link" onClick={handleVerify}>验证</Button>
               <Button type="text" style={{ marginLeft: 16 }} onClick={handleDownload}>结果</Button>
-              <Button type="text" style={{ marginLeft: 16 }} onClick={handleStatus}>状态</Button>
+              <Button type="text" style={{ marginLeft: 16 }} onClick={handleModalOpen}>状态</Button>
             </Descriptions.Item>
           </Descriptions>
         </Col>
       </Row>
+      <FloatButton icon={<PlusOutlined />} />
+
+      <Modal
+        title={
+          <span>{statusData && statusData.task_stat === 'completed' ? (
+            <CheckCircleOutlined style={{ marginRight: 8 }} />
+          ) : (
+            <InfoCircleOutlined style={{ marginRight: 8 }} />
+          )}任务状态</span>
+        }
+
+        open={visible}
+        onCancel={handleModalClose}
+        footer={null}
+      >
+        {loading ? (
+          <Skeleton active /> 
+        ) : statusData ? (
+          <div>
+            <p>任务ID: {statusData.task_id}</p>
+            <p>状态: {trans[statusData.task_stat]}</p>
+
+            {statusData.task_stat === 'running' && (
+              <p>验证阶段: {statusData.task_info.desc} {statusData.task_info.sub_stage}</p>
+            )}
+            
+            {statusData.task_stat === 'completed' && statusData.task_result && (
+              <div>
+                <p>数据规模: {statusData.task_result.data_length}</p>
+                <p>运算类型: {operate_to_text[statusData.task_result.operate_between]}</p>
+                <p><strong>错误数量: </strong>{statusData.task_result.checked_mistakes}</p>
+                <p><strong>错误比例: </strong>{statusData.task_result.mistake_rate}</p>
+                <p><strong>结果置信度: </strong>{statusData.task_result.conf_level}</p>
+                <p><strong>结果误差率: </strong>{statusData.task_result.error_rate}</p>
+                <p><strong>时间开销: </strong>{statusData.task_result.time_cost}</p>
+                <p><strong>通信开销: </strong>{statusData.task_result.comm_cost}</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div>暂无任务状态信息</div> 
+        )}
+      </Modal>
     </div>
   );
 };

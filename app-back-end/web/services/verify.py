@@ -1,15 +1,17 @@
 import os
 import time
+import secrets
+
 import asyncio
+import numpy as np
 import pandas as pd
 
 from pathlib import Path
 from typing import Optional, Dict, Any
 from fastapi import HTTPException
 
-from ..utils.file import split_csv, check_equal_row_count, process_files, combine_results
-# from runner import tasks, OPERA_DICT, DEFAULT_DIR_OUT, DEFAULT_URI
-
+from ..utils.file import check_equal_row_count, process_files, combine_results, boost_split_csv
+from ..utils.data import get_sample_size
 
 async def verify_serv(
     id: str,
@@ -18,10 +20,14 @@ async def verify_serv(
     split_n: int,
     workers: int,
     scale: int,
+    conf_level: float,
+    error_rate: float,
     tasks: Dict[str, Any],
     OPERA_DICT: Dict[str, int],
     DEFAULT_DIR_OUT: Path,
     DEFAULT_URI: str,
+    is_csv: bool = True,
+    check_all: bool = False,
     is_async: bool = True,
 ):
     try:
@@ -54,25 +60,49 @@ async def verify_serv(
                 "status": "running",
                 "stage": "1/4",
                 "info": {
-                    "desc": "Checking data files.",
+                    "desc": "Checking and applying data files.",
                     "sub_stage": ""
                 },
                 **tasks[id]
             }
 
-        df_a = pd.read_csv(file_name_a)
-        df_b = pd.read_csv(file_name_b)
-        df_r = pd.read_csv(file_name_r)
+        if is_csv:
+            origin_df_a = pd.read_csv(file_name_a).set_index('number')
+            origin_df_b = pd.read_csv(file_name_b).set_index('number')
+            origin_df_r = pd.read_csv(file_name_r).set_index('number')
 
-        row_count = check_equal_row_count([df_a, df_b, df_r])
+        else:
+            origin_df_a = pd.read_hdf(file_name_a, key='data')
+            origin_df_b = pd.read_hdf(file_name_b, key='data')
+            origin_df_r = pd.read_hdf(file_name_r, key='data')
+
+        row_count = check_equal_row_count([origin_df_a, origin_df_b, origin_df_r])
         if split_n < 0 or split_n > row_count:
             raise HTTPException(
                 status_code=400, 
                 detail=f"split_n must be between 0 and {row_count}."
             )
         
-        if split_n == 0:    # Auto detect
-            split_n = row_count // 1000000 if row_count > 1000000 else 1
+        sample_size = get_sample_size(conf_level, error_rate, row_count)
+        if row_count <= 100_0000 or check_all:
+            sample_size = row_count
+            sample_indexes = np.arange(1, row_count + 1).tolist()
+        else:
+            np.random.seed(secrets.randbelow(2 ** 32 - 2))
+            sample_indexes = np.random.choice(np.arange(1, row_count + 1), size=sample_size, replace=False).tolist()
+        
+        await asyncio.sleep(0.01)
+        df_a: pd.DataFrame = origin_df_a.loc[sample_indexes]
+
+        await asyncio.sleep(0.01)
+        df_b: pd.DataFrame = origin_df_b.loc[sample_indexes]
+
+        await asyncio.sleep(0.01)
+        df_r: pd.DataFrame = origin_df_r.loc[sample_indexes]
+            
+        if split_n == 0:   # auto detect
+            split_n = sample_size // 100_0000
+            split_n += 1 if sample_size % 100_0000 != 0 else 0
 
         os.makedirs(base_path / "split", exist_ok=True)
         os.makedirs(base_path / "temp", exist_ok=True)
@@ -80,25 +110,27 @@ async def verify_serv(
         split_files = {}
 
         if is_async:
+            tasks[id]["status"] = "running"
             tasks[id]["stage"] = "2/4"
             tasks[id]["info"] = {
                 "desc": "Splitting original data:",
                 "sub_stage": "1/3 - data of Alice."
             }        
-        split_files['A'] = await split_csv(df_a, "Alice.csv", split_n, base_path / "split")
+        split_files['A'] = await boost_split_csv(df_a, "Alice.csv", sample_size, split_n, base_path / "split")
 
         if is_async:
             tasks[id]["info"]["sub_stage"] = "2/3 - data of Bob."
-        split_files['B'] = await split_csv(df_b, "Bob.csv", split_n, base_path / "split")
+        split_files['B'] = await boost_split_csv(df_b, "Bob.csv", sample_size, split_n, base_path / "split")
 
         if is_async:
             tasks[id]["info"]["sub_stage"] = "3/3 - data of Result."
-        split_files['R'] = await split_csv(df_r, "Result.csv", split_n, base_path / "split")
+        split_files['R'] = await boost_split_csv(df_r, "Result.csv", sample_size, split_n, base_path / "split")
 
         result_file_names = []
         difference, comm_cost, time_cost = 0, 0, 0.
 
         if is_async:
+            tasks[id]["status"] = "running"
             tasks[id]["stage"] = "3/4"
             tasks[id]["info"] = {
                 "desc": "Verifying calculated results:",
@@ -131,26 +163,40 @@ async def verify_serv(
             comm_cost += c_cost
             time_cost += t_cost
             if is_async:
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(0.1)
             else:
-                time.sleep(0.5)
+                time.sleep(0.1)
 
         if is_async:
+            tasks[id]["status"] = "running"
             tasks[id]["stage"] = "4/4"
             tasks[id]["info"] = {
                 "desc": "Combining verified results.",
                 "sub_stage": ""
             } 
         combine_results(result_file_names, base_path / "Verified.csv")
+        
+        total_mistake_rate = float(difference) / sample_size
+        mistake_rate = f'{round(total_mistake_rate * 100, 4)}% ± {round(error_rate * 100, 2)}%'
+        mistakes = f'{max(round(row_count * total_mistake_rate) - round(row_count * error_rate), 0)} ~ ' \
+                   f'{min(round(row_count * total_mistake_rate) + round(row_count * error_rate), row_count)}'
+
+        if row_count <= 100_0000 or check_all:
+            error_rate = 0.
+            conf_level = 1.
+            mistakes = f'{difference}'
+            mistake_rate = f'{round(total_mistake_rate * 100, 4)}%'
 
         verify_result = {
             "status": "success",
-            "data_length": tasks[id]["length"],
-            "checked_errors": difference,
-            "error_rate": f"{round(float(difference) / tasks[id]['length'], 4) * 100}%",
-            "comm_cost": comm_cost,
-            "time_cost": time_cost,
-            # "combined_file": base_path / "Verified.csv",
+            "data_length": row_count,
+            "operate_between": operate,
+            "checked_mistakes": mistakes,
+            "mistake_rate": mistake_rate,
+            "conf_level": f'{conf_level * 100}%',
+            "error_rate": f'{error_rate * 100}%',
+            "comm_cost": f'{comm_cost} bits',
+            "time_cost": f'{round(time_cost, 4)} ms',
         }
 
         if is_async:

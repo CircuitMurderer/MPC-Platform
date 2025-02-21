@@ -15,6 +15,7 @@ from web.services.verify import verify_serv
 from web.services.result import result_serv
 from web.services.delete import delete_serv
 from web.services.status import status_serv
+from web.services.generate import gen_serv
 
 
 OPERA_MAP = ['+', '-', '*', '/', "+'", "/'", '^']
@@ -105,6 +106,8 @@ async def run_process(
                 split_n, 
                 workers, 
                 scale, 
+                0.9999,
+                0.001,
                 tasks,
                 OPERA_DICT,
                 DEFAULT_DIR_OUT,
@@ -115,7 +118,8 @@ async def run_process(
 
         return {
             "status": "success",
-            "message": f"Verify task (ID = '{id}') has been started."
+            "message": f"Verify task (ID = '{id}') has been started.",
+            "task_id": id
         }
     
     except Exception as e:
@@ -146,6 +150,27 @@ async def get_task_stat(id: str = Query(...)):
         global tasks
         return await status_serv(id, tasks)
         
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.get("/gen")
+async def generate_data(
+    id: str,
+    operator: Optional[str],
+    data_length: int,
+):
+    try:
+        global tasks
+        return await gen_serv(
+            id=id,
+            operator=operator,
+            data_length=data_length, 
+            tasks=tasks,
+            OPERA_DICT=OPERA_DICT,
+            DEFAULT_DIR_OUT=DEFAULT_DIR_OUT
+        )
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

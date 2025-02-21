@@ -6,7 +6,8 @@ import pandas as pd
 
 from io import BytesIO
 from typing import List
-from multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor
+
 from .http import check_exception, post_file, get_request
 
 
@@ -84,6 +85,10 @@ def save_part(pair):
     return part_file_name
 
 
+def save_part_csv(part_df: pd.DataFrame, part_file_name):
+    part_df.to_csv(part_file_name, index=True, index_label='number')
+
+
 async def split_csv(df: pd.DataFrame, file_name: str, num_parts: int, output_dir: str):
     rows_per_part = len(df) // num_parts
     remainder = len(df) % num_parts
@@ -108,6 +113,36 @@ async def split_csv(df: pd.DataFrame, file_name: str, num_parts: int, output_dir
     # with Pool(processes=min(num_parts, os.cpu_count())) as pool:
     #     _ = pool.map(save_part, list(zip(part_dfs, part_filenames)))
 
+    return part_filenames
+
+
+async def boost_split_csv(df: pd.DataFrame, file: str, data_len: int, num_parts: int, output_dir: str):
+    rows_per_part = data_len // num_parts
+    remainder = data_len % num_parts
+    base_name = os.path.basename(file)
+    name, ext = os.path.splitext(base_name)
+
+    os.makedirs(output_dir, exist_ok=True)
+    part_filenames = []
+
+    part_ranges = [
+        (i * rows_per_part + min(i, remainder), (i + 1) * rows_per_part + min(i + 1, remainder))
+        for i in range(num_parts)
+    ]
+
+    with ThreadPoolExecutor() as executor:
+        futures = []
+        for i, (start_idx, end_idx) in enumerate(part_ranges):
+            part_df = df.iloc[start_idx:end_idx] 
+            part_file_name = os.path.join(output_dir, f"{name}-{i + 1}{ext}")
+            part_filenames.append(part_file_name)
+            futures.append(executor.submit(save_part_csv, part_df, part_file_name))
+            await asyncio.sleep(0.01)
+        
+        for future in futures:
+            future.result() 
+            await asyncio.sleep(0.01)
+    
     return part_filenames
 
 

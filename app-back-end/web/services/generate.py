@@ -2,68 +2,48 @@ import os
 import io
 import csv
 import random
+
 import aiofiles
 import numpy as np
+import dask.array as da
+import dask.dataframe as dd
 
 from pathlib import Path
 from typing import Dict, Any
 from fastapi import HTTPException
 
-from ..utils.file import file_summary
+from ..utils.data import data_summary
 
 
-def generate_csv(N: int) -> bytes:
-    output = io.BytesIO()
-    writer = csv.writer(output, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    writer.writerow(['number', 'data'])
-    
-    for i in range(1, N + 1):
-        data = random.uniform(0, 1)
-        writer.writerow([i, data])
-
-    output.seek(0)
-    return output.read() 
+def generate_df(N):
+    df = dd.from_array(da.arange(1, N + 1), columns=['number'])
+    df['data'] = da.random.uniform(0, 1, size=N)
+    df = df.set_index('number')
+    return df
 
 
-def read_csv_data_from_bytes(data_bytes: bytes) -> np.ndarray:
-    csv_str = data_bytes.decode('utf-8')
-    f = io.StringIO(csv_str)
-    reader = csv.reader(f)
-    next(reader)
+def do_calculate(df_a, df_b, operator):
+    data_a = da.from_array(df_a['data'].compute())
+    data_b = da.from_array(df_b['data'].compute())
 
-    data = []
-    for row in reader:
-        data.append(float(row[1]))
+    df_r = dd.from_array(da.arange(1, data_a.shape[0] + 1), columns=['number'])
+    df_r = df_r.set_index('number')
 
-    return np.array(data)
-
-
-def apply_operation(data1: np.ndarray, data2: np.ndarray, operator: str) -> np.ndarray:
-    if operator == 'add':
-        return data1 + data2
-    elif operator == 'sub':
-        return data1 - data2
-    elif operator == 'mul':
-        return data1 * data2
-    elif operator == 'div':
-        return np.divide(data1, data2, out=np.full_like(data1, np.inf), where=data2!=0)
-    elif operator == 'exp':
-        return np.power(data1, data2)
+    if operator.lower() == 'add':
+        data_r = data_a + data_b
+    elif operator.lower() == 'sub':
+        data_r = data_a - data_b
+    elif operator.lower() == 'mul':
+        data_r = data_a * data_b
+    elif operator.lower() == 'div':
+        data_r = data_a / data_b
+    elif operator.lower() == 'exp':
+        data_r = data_a ** data_b
     else:
         raise ValueError(f"Unsupported operator: {operator}")
 
-
-def calculate_result_data(alice_data: np.ndarray, bob_data: np.ndarray, operator: str) -> bytes:
-    output = io.BytesIO()
-    writer = csv.writer(output)
-    writer.writerow(['number', 'operation', 'data'])
-
-    result = apply_operation(alice_data, bob_data, operator)
-    for i, res in enumerate(result, 1):
-        writer.writerow([i, res])
-    
-    output.seek(0)
-    return output.read()
+    df_r['data'] = data_r.compute()
+    return df_r
 
 
 async def gen_serv(
@@ -81,36 +61,40 @@ async def gen_serv(
         )
     
     os.makedirs(DEFAULT_DIR_OUT / id, exist_ok=True)
-    party_datas = {}
+    save_paths = {
+        'A': DEFAULT_DIR_OUT / id / "Alice.csv",
+        'B': DEFAULT_DIR_OUT / id / "Bob.csv",
+        'R': DEFAULT_DIR_OUT / id / "Result.csv",
+    }
 
-    for party in ['Alice', 'Bob']:
-        save_path = DEFAULT_DIR_OUT / id / f"{party}.csv"
+    df_a = generate_df(data_length)
+    df_b = generate_df(data_length)
+    df_r = do_calculate(df_a, df_b, operator)
 
-        buffer = generate_csv(data_length)
-        async with aiofiles.open(save_path, "wb") as f:
-            await f.write(buffer)
+    summary_a = data_summary(df_a)
+    summary_b = data_summary(df_b)
+    summary_r = data_summary(df_r)
 
-        summary = await file_summary(file_cont=buffer)
-        if not id in tasks:
-            tasks[id] = {}
-        tasks[id]["length"] = summary["items"]
-        tasks[id][party] = {"summary": summary}
+    df_a.to_hdf(save_paths["A"], key='data', mode='w')
+    df_b.to_hdf(save_paths["B"], key='data', mode='w')
+    df_r.to_hdf(save_paths["R"], key='data', mode='w')
 
-        party_datas[party] = read_csv_data_from_bytes(buffer)
-
-    result_data = calculate_result_data(party_datas['Alice'], party_datas['Bob'])
-    result_path = DEFAULT_DIR_OUT / id / 'Result.csv'
-    async with aiofiles.open(result_path, 'wb') as file:
-        await file.write(result_data)
-
-    summary = await file_summary(file_cont=result_data)
     if not id in tasks:
         tasks[id] = {}
-    tasks[id]["length"] = summary["items"]
-    tasks[id]["Result"] = {"summary": summary}
+
+    tasks[id]["length"] = data_length
+    tasks[id]["Alice"] = {"summary": summary_a}
+    tasks[id]["Bob"] = {"summary": summary_b}
+    tasks[id]["Result"] = {"summary": summary_r}
 
     return {
         "status": "success",
+        "task_id": id,
         "message": f"File for id='{id}' generated successfully.",
-        "data_length": summary["items"]
+        "data_length": data_length,
+        "summary": {
+            "a": summary_a,
+            "b": summary_b,
+            "r": summary_r
+        }
     }
