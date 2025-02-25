@@ -1,6 +1,6 @@
-# MPC all in one
+# MPC Platform
 
-The MPC Calculate & Verify Platform.
+The Multi-Party Computation Verify Platform.
 
 ## Build & Start
 
@@ -8,7 +8,7 @@ The MPC Calculate & Verify Platform.
 
 Ensure that you have downloaded the `server`, `sharer`, and `verifier` from the release and placed them in the `run-dir` directory. We have provided the compiled programs for the Linux amd64 system in the release. If your platform is different, you can also enter the `components` folder to compile these three executable programs separately and place them in the `run-dir` directory.
 
-If you want to compile them by yourself, please make sure that you have installed `go 1.21+`, `gcc 11+`, and `cmake 3.16+`, as well as the SCI library of EzPC. For the compilation of the SCI library, please refer to the official manual. After compiling the SCI library, please set the following two lines in `components/shr_based/CMakeLists.txt` to the address of your compiled SCI library:
+If you want to compile them by yourself, please make sure that you have installed `go 1.21+`, `gcc 11+`, and `cmake 3.16+`, as well as the SCI library of EzPC. For the compilation of the SCI library, please refer to the [official manual](https://github.com/mpc-msri/EzPC/tree/master/SCI#readme). After compiling the SCI library, please set the following two lines in `components/shr_based/CMakeLists.txt` to the address of your compiled SCI library:
 ```cmake
 set(SCI_DIR "/path/to/SCI/install/dir/lib/cmake/SCI")
 include_directories("/path/to/SCI/install/dir/include")
