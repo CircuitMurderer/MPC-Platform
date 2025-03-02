@@ -29,7 +29,7 @@ go build -ldflags="-s -w"
 ```
 The compiled `server` is located in the `components/server` folder. After all the above compilations are completed, place the `server`, `sharer`, and `verifier` in the `run-dir` directory to complete the preparation work of the core programs.
 
-Next, please ensure that you have installed `python` and `pip` (or a `conda` virtual environment), and the `python` version should be `3.10+`; at the same time, `Nodejs` and `yarn` are also necessary, and the `Nodejs` version should be `18.16+`. The following commands are used to install the dependencies of `python` and `nodejs`:
+Next, please ensure that you have installed `python` and `pip` (or a `conda` virtual environment), and the `python` version should be `3.10+`; at the same time, `nodejs` and `yarn` are also necessary, and the `nodejs` version should be `18.16+`. The following commands are used to install the dependencies of `python` and `nodejs`:
 ```shell
 cd app-front-end
 yarn
@@ -41,58 +41,64 @@ Then the preparation is finished.
 
 ### Run
 
-Front End:
-
+**Front-End.** The front-end of this application is developed based on [React](https://github.com/facebook/react) and [Antd](https://github.com/ant-design/ant-design). To start the front-end, open a new terminal screen (you can use tools like `screen` or `tmux` in a Linux environment), and then execute the following:
 ```shell
 # In a new screen
 cd app-front-end
 yarn start
 ```
 
-Back End:
-
+**Back-End.** The back-end of this application is powered by [FastAPI](https://github.com/fastapi/fastapi) and [Uvicorn](https://github.com/encode/uvicorn). To start the back-end, open another new terminal screen, and then execute the following:
 ```shell
 # In a new screen
 cd app-back-end
 python main.py
 ```
 
-Schedular:
-
+**Scheduler.** The scheduler is built using [Gin](https://github.com/gin-gonic/gin). To start the scheduler, open another new terminal screen, and then execute the following:
 ```shell
 # In a new screen
 cd run-dir
 ./server
 ```
 
+**Finishing.** If these components are not all deployed on the local machine, you can modify the scheduler IP in `app-back-end/main.py` and the back-end IP in `app-front-end/src/config.ts`. After making these adjustments, you can access the system page by navigating to `[front-end IP]:3000` in your browser. If the port 3000 is occupied, the application will be accessible at `[front-end IP]:3001`.
+
 ## Test Outlines
 
+You can certainly use the script to test the system, including the back-end and the scheduler. Following the stage like this:
 ```shell
-# Generate
-# export N=100000000
+#!/bin/bash
 
-python ../scripts/gen.py -n $N -f partyA_data.csv
-../scripts/look.py -f partyA_data.csv
-../scripts/look.py -f partyA_data.csv -l 10
+for N in 1000000 10000000 100000000
+do
+    echo "Running with data length: $N"
 
-python ../scripts/gen.py -n $N -f partyB_data.csv
-../scripts/look.py -f partyB_data.csv
-../scripts/look.py -f partyB_data.csv -l 10
+    python ../scripts/gen.py -n $N -f partyA_data.csv
+    python ../scripts/look.py -f partyA_data.csv
+    python ../scripts/look.py -f partyA_data.csv -l 10
 
-# Verify
-# export O=mul
-## O can be add, sub, mul, div, exp
+    python ../scripts/gen.py -n $N -f partyB_data.csv
+    python ../scripts/look.py -f partyB_data.csv
+    python ../scripts/look.py -f partyB_data.csv -l 10
 
-python ../scripts/cal.py -a partyA_data.csv -b partyB_data.csv -f result_data.csv -o $O
-../scripts/look.py -f result_data.csv
-../scripts/look.py -f result_data.csv -l 10
+    for O in add sub mul div exp
+    do
+        echo "Running with operation: $O"
 
-python ../scripts/run.py -a partyA_data.csv -b partyB_data.csv -r result_data.csv -c checked_result.csv -o $O -n 0 -w 8
-wc -l checked_result.csv
-head -n 10 checked_result.csv
+        python ../scripts/cal.py -a partyA_data.csv -b partyB_data.csv -f result_data.csv -o $O
+        python ../scripts/look.py -f result_data.csv
+        python ../scripts/look.py -f result_data.csv -l 10
 
-../scripts/break.py -f result_data.csv -b 0.1
-python ../scripts/run.py -a partyA_data.csv -b partyB_data.csv -r result_data.csv -c checked_result.csv -o $O -n 0 -w 8
-wc -l checked_result.csv
-head -n 10 checked_result.csv
+        python ../scripts/run.py -a partyA_data.csv -b partyB_data.csv -r result_data.csv -c checked_result.csv -o $O -n 0 -w 8
+        wc -l checked_result.csv
+        head -n 10 checked_result.csv
+
+        python ../scripts/break.py -f result_data.csv -b 0.1
+        python ../scripts/run.py -a partyA_data.csv -b partyB_data.csv -r result_data.csv -c checked_result.csv -o $O -n 0 -w 8
+        wc -l checked_result.csv
+        head -n 10 checked_result.csv
+    done
+done
 ```
+The commands can also be found in `scripts/tldr.sh`.
