@@ -64,6 +64,8 @@ cd run-dir
 
 **Finishing.** If these components are not all deployed on the local machine, you can modify the scheduler IP in `app-back-end/main.py` and the back-end IP in `app-front-end/src/config.ts`. After making these adjustments, you can access the system page by navigating to `[front-end IP]:3000` in your browser. If the port 3000 is occupied, the application will be accessible at `[front-end IP]:3001`.
 
+**Interaction.** After opening the browser, you can select the desired function from the menu bar on the left side of the webpage. The system provides verification functions for secret sharing computation and homomorphic encryption computation. Simply upload the original data file, specify the parameters, and click the **VERIFY** button to submit the verification task in the background. You can check the verification status at any time using the **STATUS** button and obtain the verification results through the **RESULTS** button once the process is completed.
+
 ## Test Outlines
 
 You can certainly use the script to test the system, including the back-end and the scheduler. Following the stage like this:
