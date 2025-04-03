@@ -2,6 +2,10 @@
 
 The Multi-Party Computation Verify Platform.
 
+## What is this?
+
+This program is developed to verifiy the results of multi-party secure computation, supporting both secret sharing and homomorphic encryption methods. It is designed for efficient multi-machine deployment, with a clear structure and optimized multi-threading to enhance performance.
+
 ## Build & Start
 
 ### Prepare
