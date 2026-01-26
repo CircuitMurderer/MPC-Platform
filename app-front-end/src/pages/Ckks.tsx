@@ -10,15 +10,12 @@ const { TextArea } = Input;
 const BASIC_URI = CKKS_BASIC_URI;
 
 const Ckks: React.FC = () => {
-  // 表格数据
   const [logs, setLogs] = useState<string[]>([]);
 
-  // 表单数据
   const [datasetSize, setDatasetSize] = useState<number>(1000000);
   const [operationCount, setOperationCount] = useState<number>(1000000);
   const [operationForm, setOperationForm] = useState<string>("-a");
 
-  // 上传文件（空接口）
   const handleUpload = async (file: any) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -33,15 +30,13 @@ const Ckks: React.FC = () => {
       setLogs(prevLogs => [...prevLogs, `文件上传错误: ${file.name}`]);
     }
 
-    return false; // 防止自动上传
+    return false; 
   };
 
-  // 清除日志
   const handleClearLogs = () => {
     setLogs([]);
   };
 
-  // 生成随机数据集
   const handleGenerateDataset = async () => {
     try {
       const res = await axios.post(`${BASIC_URI}/ckksv/generate`, {
@@ -53,7 +48,6 @@ const Ckks: React.FC = () => {
     }
   };
 
-  // 运算
   const handleCalculate = async () => {
     try {
       const res = await axios.post(`${BASIC_URI}/ckksv/calcuate`, {
@@ -66,7 +60,6 @@ const Ckks: React.FC = () => {
     }
   };
 
-  // 验证
   const handleVerify = async () => {
     try {
       const res = await axios.post(`${BASIC_URI}/ckksv/verify`, {
@@ -79,7 +72,6 @@ const Ckks: React.FC = () => {
     }
   };
 
-  // 下载数据
   const handleDownloadData = async () => {
     try {
       const res = await axios.get(`${BASIC_URI}/ckksv/download_data`, {
@@ -99,7 +91,6 @@ const Ckks: React.FC = () => {
     }
   };
 
-  // 下载结果
   const handleDownloadResults = async () => {
     try {
       const res = await axios.get(`${BASIC_URI}/ckksv/download_results`, {
@@ -118,7 +109,6 @@ const Ckks: React.FC = () => {
     }
   };
 
-  // 增加新的按钮来触发 destroy API
   const handleDestroy = async () => {
     try {
       const res = await axios.post(`${BASIC_URI}/ckksv/destroy`, {
@@ -132,9 +122,8 @@ const Ckks: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: "0" }}>
       <Row gutter={16}>
-        {/* 第一行 - 上传文件、按钮、日志 */}
         <Col span={6}>
           <Upload.Dragger
             name="file"
@@ -142,7 +131,7 @@ const Ckks: React.FC = () => {
             showUploadList={false}
             multiple={false}
             accept=".csv"
-            style={{ height: 20 }} // 设置上传文件框高度
+            style={{ height: 20, background: '#fafafa' }}
           >
             <p className="ant-upload-drag-icon">
               <InboxOutlined />
@@ -171,14 +160,13 @@ const Ckks: React.FC = () => {
               rows={8}
               value={logs.join("\n")}
               readOnly
-              style={{ width: "100%", height: "100%" }} // 设置 TextArea 高度
+              style={{ width: "100%", height: "100%" }} 
             />
           </Card>
         </Col>
       </Row>
 
-      {/* 第二行 - 验证参数设置 */}
-      <Row gutter={16} style={{ marginTop: "20px" }}> {/* 增加了上下间距 */}
+      <Row gutter={16} style={{ marginTop: "20px" }}> 
         <Col span={24}>
           <Card title="验证参数设置" bordered={false}>
             <Row gutter={16}>

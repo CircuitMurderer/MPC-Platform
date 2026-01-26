@@ -3,7 +3,7 @@ import asyncio
 import uvicorn
 
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 from pickledb import PickleDB
 from contextlib import asynccontextmanager
@@ -40,20 +40,24 @@ os.makedirs(DEFAULT_DIR_OUT, exist_ok=True)
 os.makedirs(DEFAULT_CAL_DIR, exist_ok=True)
 
 tasks: Dict[str, dict] = {}
+task_order: List[str] = []
 db = PickleDB(DEFAULT_DB_DIR)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global tasks
+    global task_order
 
     tasks = db.get('tasks')
-    if tasks is None:
-        tasks = {}
+    task_order = db.get('task_order')
+    tasks = {} if tasks is None else tasks
+    task_order = [] if task_order is None else task_order
     print(f"Loaded database: {DEFAULT_DB_DIR}")
 
     yield
 
+    db.set('task_order', task_order)
     db.set('tasks', tasks)
     db.save()
     print(f"Saved database: {DEFAULT_DB_DIR}")
@@ -97,7 +101,7 @@ async def run_process(
     scale: int = 1,
 ):
     try:
-        global tasks
+        global tasks, task_order
         asyncio.create_task(
             verify_serv(
                 id, 
@@ -109,6 +113,7 @@ async def run_process(
                 0.9999,
                 0.001,
                 tasks,
+                task_order,
                 OPERA_DICT,
                 DEFAULT_DIR_OUT,
                 DEFAULT_URI,
@@ -154,7 +159,20 @@ async def get_task_stat(id: str = Query(...)):
         raise HTTPException(status_code=500, detail=str(e))
     
 
-@app.get("/gen")
+@app.get("/all")
+async def get_task_stat():
+    try:
+        global tasks, task_order
+        return {
+            'tasks': tasks,
+            'task_order': task_order
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.get("/generate")
 async def generate_data(
     id: str,
     operator: Optional[str],

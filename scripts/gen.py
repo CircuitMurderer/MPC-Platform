@@ -15,7 +15,7 @@ def generate_csv(filename, N, is_csv):
     pbar.register()
 
     if is_csv:
-        df.to_csv(filename, index=True, index_label='number')
+        df.compute().to_csv(filename, index=True, index_label='number')
     else:
         df.to_hdf(filename, key='data', mode='w')
 

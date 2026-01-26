@@ -1,10 +1,5 @@
 import os
-import io
-import csv
-import random
 
-import aiofiles
-import numpy as np
 import dask.array as da
 import dask.dataframe as dd
 
@@ -71,13 +66,17 @@ async def gen_serv(
     df_b = generate_df(data_length)
     df_r = do_calculate(df_a, df_b, operator)
 
-    summary_a = data_summary(df_a)
-    summary_b = data_summary(df_b)
-    summary_r = data_summary(df_r)
+    summary_a = await data_summary(df_a)
+    summary_b = await data_summary(df_b)
+    summary_r = await data_summary(df_r)
 
-    df_a.to_hdf(save_paths["A"], key='data', mode='w')
-    df_b.to_hdf(save_paths["B"], key='data', mode='w')
-    df_r.to_hdf(save_paths["R"], key='data', mode='w')
+    # df_a.to_hdf(save_paths["A"], key='data', mode='w')
+    # df_b.to_hdf(save_paths["B"], key='data', mode='w')
+    # df_r.to_hdf(save_paths["R"], key='data', mode='w')
+
+    df_a.compute().to_csv(save_paths["A"], index=True, index_label='number')
+    df_b.compute().to_csv(save_paths["B"], index=True, index_label='number')
+    df_r.compute().to_csv(save_paths["R"], index=True, index_label='number')
 
     if not id in tasks:
         tasks[id] = {}

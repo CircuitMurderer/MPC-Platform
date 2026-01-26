@@ -1,4 +1,4 @@
-#!/home/b426/miniconda3/envs/mpc/bin/python
+#!/usr/bin/env python
 
 import dask.dataframe as dd
 import argparse

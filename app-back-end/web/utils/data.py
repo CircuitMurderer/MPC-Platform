@@ -1,5 +1,9 @@
+import io
 import hashlib
 import scipy.stats as stats
+
+import pandas as pd
+import dask.dataframe as dd
 
 
 def get_sample_size(confidence_level, error, total_sample_size, P=0.5):
@@ -15,12 +19,26 @@ def get_sample_size(confidence_level, error, total_sample_size, P=0.5):
         return int(n_finite)
     
 
-async def data_summary(file_cont: bytes):
+async def data_summary(input_data):
+    if isinstance(input_data, (pd.DataFrame, dd.DataFrame)):
+        if isinstance(input_data, dd.DataFrame):
+            df = input_data.compute()
+        else:
+            df = input_data
+
+        content_bytes = str(df.values).encode('utf-8')
+        
+    elif isinstance(input_data, bytes):
+        content_bytes = input_data
+        df = pd.read_csv(io.BytesIO(input_data))
+        
+    else:
+        raise TypeError(f"Unsupported input type: {type(input_data)}")
+
     md5_hash = hashlib.md5()
-    md5_hash.update(file_cont)
+    md5_hash.update(content_bytes) 
     file_md5 = md5_hash.hexdigest()
 
-    df = pd.read_csv(BytesIO(file_cont))
     if "data" not in df.columns:
         raise ValueError("The column 'data' is missing in the file.")
 

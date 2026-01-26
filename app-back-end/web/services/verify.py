@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from fastapi import HTTPException
 
 from ..utils.file import check_equal_row_count, process_files, combine_results, boost_split_csv
@@ -23,6 +23,7 @@ async def verify_serv(
     conf_level: float,
     error_rate: float,
     tasks: Dict[str, Any],
+    task_order: List[str],
     OPERA_DICT: Dict[str, int],
     DEFAULT_DIR_OUT: Path,
     DEFAULT_URI: str,
@@ -56,6 +57,10 @@ async def verify_serv(
         file_name_r = base_path / "Result.csv"
 
         if is_async:
+            if id in task_order:
+                task_order.remove(id)
+
+            task_order.append(id)
             tasks[id] = {
                 "status": "running",
                 "stage": "1/4",

@@ -2,8 +2,8 @@ import React from "react";
 import { BrowserRouter as Router, Route, Routes, Link, useLocation } from "react-router-dom";
 import { Layout, Menu, Typography, Breadcrumb } from "antd";
 import Home from "./pages/Home";
-import Compute from "./pages/Compute";
 import Ckks from "./pages/Ckks";
+import SecretsSharing from "./pages/SecretsSharing";
 import { STORAGE_PAGE } from "./config";
 
 const { Header, Content, Footer, Sider } = Layout;
@@ -16,7 +16,29 @@ const handleStoragePageClick = () => {
 const App: React.FC = () => {
   return (
     <Router>
-      <Layout style={{ minHeight: "100vh" }}>
+      <style>{`
+        body {
+          margin: 0;
+          padding: 0;
+          overflow: hidden; 
+        }
+        ::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #ccc;
+          border-radius: 3px;
+        }
+        ::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+           border-bottom: none;
+        }
+      `}</style>
+
+      <Layout style={{ height: "100vh" }}>
         <Sider breakpoint="lg" collapsedWidth="80">
           <div style={{ padding: "16px", textAlign: "center" }}>
             <Title level={5} style={{ color: "white", margin: 0 }}>
@@ -26,23 +48,32 @@ const App: React.FC = () => {
           <SelectMenu />
         </Sider>
         
-        <Layout>
-          <Header style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', height: '60px', background: "#fff", padding: "0 16px" }}>
+        <Layout style={{ display: 'flex', flexDirection: 'column' }}>
+          
+          <Header style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', height: '60px', background: "#fff", padding: "0 16px", boxShadow: '0 1px 4px rgba(0,21,41,.08)', zIndex: 1 }}>
             <Title level={4} style={{ margin: 0 }}> </Title>
             <div>
               <DynamicBreadcrumb />
             </div>
           </Header>
-          <Content style={{ margin: "16px", padding: "16px", background: "#fff" }}>
+          
+          <Content style={{ 
+            padding: "16px", 
+            background: "transparent", 
+            flex: 1, 
+            overflowY: "auto",
+            minHeight: 0 
+          }}>
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/shr" element={<Compute />} />
+              <Route path="/shr" element={<SecretsSharing />} />
               <Route path="/fhe" element={<Ckks />} />
             </Routes>
+            
+            <Footer style={{ textAlign: "center", background: "transparent", padding: "24px 0" }}>
+              高置信的密文数据完整性验证工具集 © 2024
+            </Footer>
           </Content>
-          <Footer style={{ textAlign: "center" }}>
-            高置信的密文数据完整性验证工具集 © 2024
-          </Footer>
         </Layout>
       </Layout>
     </Router>
