@@ -2,13 +2,17 @@
 
 The Multi-Party Computation Verify Platform.
 
+## What is this?
+
+This program is developed to verifiy the results of multi-party secure computation, supporting both secret sharing and homomorphic encryption methods. It is designed for efficient multi-machine deployment, with a clear structure and optimized multi-threading to enhance performance.
+
 ## Build & Start
 
 ### Prepare
 
 Ensure that you have downloaded the `server`, `sharer`, and `verifier` from the release and placed them in the `run-dir` directory. We have provided the compiled programs for the Linux amd64 system in the release. If your platform is different, you can also enter the `components` folder to compile these three executable programs separately and place them in the `run-dir` directory.
 
-If you want to compile them by yourself, please make sure that you have installed `go 1.21+`, `gcc 11+`, and `cmake 3.16+`, as well as the SCI library of EzPC. For the compilation of the SCI library, please refer to the [official manual](https://github.com/mpc-msri/EzPC/tree/master/SCI#readme). After compiling the SCI library, please set the following two lines in `components/shr_based/CMakeLists.txt` to the address of your compiled SCI library:
+If you want to compile them by yourself, please make sure that you have installed `go 1.21+`, `gcc 11+`, and `cmake 3.16+`, as well as the SCI library of EzPC. For the compilation of the SCI library, please refer to the [SCI official manual](https://github.com/mpc-msri/EzPC/tree/master/SCI#readme). After compiling the SCI library, please set the following two lines in `components/shr_based/CMakeLists.txt` to the address of your compiled SCI library:
 ```cmake
 set(SCI_DIR "/path/to/SCI/install/dir/lib/cmake/SCI")
 include_directories("/path/to/SCI/install/dir/include")
@@ -63,6 +67,8 @@ cd run-dir
 ```
 
 **Finishing.** If these components are not all deployed on the local machine, you can modify the scheduler IP in `app-back-end/main.py` and the back-end IP in `app-front-end/src/config.ts`. After making these adjustments, you can access the system page by navigating to `[front-end IP]:3000` in your browser. If the port 3000 is occupied, the application will be accessible at `[front-end IP]:3001`.
+
+**Interaction.** After opening the browser, you can select the desired function from the menu bar on the left side of the webpage. The system provides verification functions for secret sharing computation and homomorphic encryption computation. Simply upload the original data file, specify the parameters, and click the **VERIFY** button to submit the verification task in the background. You can check the verification status at any time using the **STATUS** button and obtain the verification results through the **RESULTS** button once the process is completed.
 
 ## Test Outlines
 
